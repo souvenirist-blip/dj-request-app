@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "🎧 DJ リクエスト",
+  title: "🎧 SDC Song Request",
   description: "DJイベント用楽曲リクエストアプリ",
 };
 

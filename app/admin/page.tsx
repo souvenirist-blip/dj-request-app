@@ -349,7 +349,8 @@ export default function AdminPage() {
                          bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-semibold
                          hover:shadow-lg hover:shadow-amber-500/50 transition-all duration-200"
               >
-                🔥 {track.totalRequests}件のリクエスト
+                <span className="hidden sm:inline">🔥 {track.totalRequests}件のリクエスト</span>
+                <span className="sm:hidden">🔥 {track.totalRequests}件</span>
                 <span className="text-xs">{collapsedTrackIds.has(track.id) ? "▶" : "▼"}</span>
               </button>
               {/* 再生日時 */}

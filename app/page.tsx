@@ -169,7 +169,7 @@ export default function Home() {
         {/* ヘッダー */}
         <div className="text-center pt-4 pb-2">
           <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-400 via-purple-300 to-cyan-400 bg-clip-text text-transparent mb-2">
-            🎧 DJ リクエスト
+            🎧 SDC Song Request
           </h1>
           <p className="text-slate-400 text-sm">好きな曲をリクエストしよう</p>
         </div>
