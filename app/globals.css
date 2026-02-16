@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --primary: #8b5cf6;
+  --primary-light: #a78bfa;
+  --accent: #06b6d4;
+  --success: #10b981;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+}
+
+* {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* カスタムグラデーション */
+.gradient-primary {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+}
+
+.gradient-accent {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+}
+
+.gradient-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+/* グロー効果 */
+.glow-primary {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.4), 0 0 40px rgba(139, 92, 246, 0.2);
+}
+
+.glow-accent {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.4), 0 0 40px rgba(6, 182, 212, 0.2);
+}
+
+/* グラスモーフィズム */
+.glass {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-hover {
+  background: rgba(30, 41, 59, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* アニメーション */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.6);
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* スクロールバーのスタイル */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.7);
+}
