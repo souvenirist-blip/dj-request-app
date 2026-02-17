@@ -44,13 +44,29 @@ export default function StatsPage() {
     topArtists: [],
   });
   const [allTracks, setAllTracks] = useState<TrackWithRequests[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     document.title = "Statistics | Music Request";
     trackPageView("stats");
   }, []);
 
+  // 認証状態をチェック
   useEffect(() => {
+    const auth = sessionStorage.getItem("admin_authenticated");
+    if (auth === "true") {
+      setIsAuthenticated(true);
+    } else {
+      // 未認証の場合は管理画面にリダイレクト
+      window.location.href = "/admin";
+    }
+    setIsChecking(false);
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
     const q = query(collection(db, "tracks"));
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
@@ -130,7 +146,12 @@ export default function StatsPage() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isAuthenticated]);
+
+  // 認証チェック中またはリダイレクト中は何も表示しない
+  if (isChecking || !isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto min-h-screen">
@@ -147,10 +168,10 @@ export default function StatsPage() {
         </div>
         <div className="flex gap-4 justify-center text-sm flex-wrap">
           <Link
-            href="/"
+            href="/admin"
             className="text-slate-400 hover:text-purple-400 transition-colors tracking-wide"
           >
-            Submit
+            Admin
           </Link>
           <span className="text-slate-700">|</span>
           <Link
@@ -338,11 +359,11 @@ export default function StatsPage() {
       {/* ナビゲーション */}
       <div className="flex gap-3 justify-center pb-8 flex-wrap">
         <Link
-          href="/"
+          href="/admin"
           className="gradient-primary px-8 py-3 rounded-lg text-white font-light tracking-wider
                    hover:opacity-90 active:scale-95 transition-all duration-200"
         >
-          Submit
+          Admin
         </Link>
         <Link
           href="/requests"

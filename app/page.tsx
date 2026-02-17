@@ -38,10 +38,34 @@ export default function Home() {
   const [manualArtistName, setManualArtistName] = useState("");
   const [showShareModal, setShowShareModal] = useState(false);
   const [sharedTrack, setSharedTrack] = useState<{ title: string; artist: string } | null>(null);
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
 
   useEffect(() => {
     document.title = "Music Request";
     trackPageView("home");
+  }, []);
+
+  // クールダウンチェック
+  useEffect(() => {
+    const checkCooldown = () => {
+      const lastSubmitTime = localStorage.getItem("last_request_time");
+      if (lastSubmitTime) {
+        const timePassed = Date.now() - parseInt(lastSubmitTime);
+        const cooldownTime = 60000; // 1分 = 60000ms
+        const remaining = cooldownTime - timePassed;
+
+        if (remaining > 0) {
+          setCooldownRemaining(Math.ceil(remaining / 1000));
+        } else {
+          setCooldownRemaining(0);
+        }
+      }
+    };
+
+    checkCooldown();
+    const interval = setInterval(checkCooldown, 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // トースト通知を追加
@@ -116,6 +140,12 @@ export default function Home() {
       return;
     }
 
+    // クールダウンチェック
+    if (cooldownRemaining > 0) {
+      addToast(`${cooldownRemaining}秒後に送信可能です`, "error");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -165,6 +195,10 @@ export default function Home() {
 
       addToast("リクエストを送信しました！", "success");
 
+      // クールダウン開始
+      localStorage.setItem("last_request_time", Date.now().toString());
+      setCooldownRemaining(60);
+
       // シェアモーダルを表示
       // setSharedTrack({
       //   title: selectedTrack.name,
@@ -197,28 +231,6 @@ export default function Home() {
           <h1 className="text-4xl sm:text-5xl font-extralight tracking-widest text-white mb-6">
             Music Request
           </h1>
-          <div className="flex gap-4 justify-center text-sm flex-wrap">
-            <Link
-              href="/requests"
-              className="text-slate-400 hover:text-purple-400 transition-colors tracking-wide"
-            >
-              Requests
-            </Link>
-            <span className="text-slate-700">|</span>
-            <Link
-              href="/history"
-              className="text-slate-400 hover:text-purple-400 transition-colors tracking-wide"
-            >
-              History
-            </Link>
-            <span className="text-slate-700">|</span>
-            <Link
-              href="/stats"
-              className="text-slate-400 hover:text-purple-400 transition-colors tracking-wide"
-            >
-              Stats
-            </Link>
-          </div>
         </div>
 
         {/* ニックネーム入力 */}
@@ -431,14 +443,24 @@ export default function Home() {
 
         <button
           onClick={handleSubmit}
-          disabled={loading}
+          disabled={loading || cooldownRemaining > 0}
           className="gradient-primary w-full py-5 rounded-lg text-white text-lg font-extralight tracking-widest
                      hover:opacity-90 active:scale-95
                      transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
                      touch-manipulation min-h-[60px]"
         >
-          {loading ? "SENDING..." : "SUBMIT REQUEST"}
+          {loading
+            ? "SENDING..."
+            : cooldownRemaining > 0
+            ? `WAIT ${cooldownRemaining}S`
+            : "SUBMIT REQUEST"}
         </button>
+
+        {cooldownRemaining > 0 && !loading && (
+          <div className="text-center text-slate-500 text-xs tracking-wide mt-2">
+            You can submit a new request in {cooldownRemaining} second{cooldownRemaining !== 1 ? 's' : ''}
+          </div>
+        )}
 
         {/* シェアモーダル */}
         {/* {showShareModal && sharedTrack && (

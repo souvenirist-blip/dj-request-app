@@ -25,13 +25,29 @@ export default function HistoryPage() {
   const [expandedTrackIds, setExpandedTrackIds] = useState<Set<string>>(
     new Set()
   );
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     document.title = "History | Music Request";
     trackPageView("history");
   }, []);
 
+  // 認証状態をチェック
   useEffect(() => {
+    const auth = sessionStorage.getItem("admin_authenticated");
+    if (auth === "true") {
+      setIsAuthenticated(true);
+    } else {
+      // 未認証の場合は管理画面にリダイレクト
+      window.location.href = "/admin";
+    }
+    setIsChecking(false);
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
     const q = query(
       collection(db, "tracks"),
       where("status", "==", "played")
@@ -71,7 +87,7 @@ export default function HistoryPage() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isAuthenticated]);
 
   const toggleExpand = (trackId: string) => {
     setExpandedTrackIds((prev) => {
@@ -84,6 +100,11 @@ export default function HistoryPage() {
       return newSet;
     });
   };
+
+  // 認証チェック中またはリダイレクト中は何も表示しない
+  if (isChecking || !isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto min-h-screen">
@@ -100,10 +121,10 @@ export default function HistoryPage() {
         </div>
         <div className="flex gap-4 justify-center text-sm flex-wrap">
           <Link
-            href="/"
+            href="/admin"
             className="text-slate-400 hover:text-purple-400 transition-colors tracking-wide"
           >
-            Submit
+            Admin
           </Link>
           <span className="text-slate-700">|</span>
           <Link
@@ -129,11 +150,11 @@ export default function HistoryPage() {
             No tracks played yet
           </div>
           <Link
-            href="/"
+            href="/admin"
             className="inline-block gradient-primary px-8 py-3 rounded-lg text-white font-light tracking-wider
                      hover:opacity-90 active:scale-95 transition-all duration-200"
           >
-            Submit Request
+            Back to Admin
           </Link>
         </div>
       )}

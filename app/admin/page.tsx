@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { db } from "../../src/lib/firebase";
 import {
   collection,
@@ -313,55 +314,81 @@ export default function AdminPage() {
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto min-h-screen">
       {/* ヘッダー */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 pt-8">
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-extralight tracking-widest text-white">
+      <div className="flex flex-col gap-4 mb-8 pt-8">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extralight tracking-widest text-white">
             Admin
           </h1>
+          <button
+            onClick={handleLogout}
+            className="glass px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-light tracking-wider hover:glass-hover hover:text-white
+                     transition-all duration-200 touch-manipulation text-slate-400"
+          >
+            Logout
+          </button>
         </div>
-        <button
-          onClick={handleLogout}
-          className="glass px-6 py-2.5 rounded-lg text-sm font-light tracking-wider hover:glass-hover hover:text-white
-                   transition-all duration-200 touch-manipulation text-slate-400"
-        >
-          Logout
-        </button>
+        <div className="flex gap-2 sm:gap-4 text-xs sm:text-sm flex-wrap">
+          <Link
+            href="/requests"
+            className="text-slate-400 hover:text-purple-400 transition-colors tracking-wide whitespace-nowrap"
+          >
+            Requests
+          </Link>
+          <span className="text-slate-700">|</span>
+          <Link
+            href="/history"
+            className="text-slate-400 hover:text-purple-400 transition-colors tracking-wide whitespace-nowrap"
+          >
+            History
+          </Link>
+          <span className="text-slate-700">|</span>
+          <Link
+            href="/stats"
+            className="text-slate-400 hover:text-purple-400 transition-colors tracking-wide whitespace-nowrap"
+          >
+            Stats
+          </Link>
+        </div>
       </div>
 
       {/* タブ切り替え */}
-      <div className="flex gap-3 mb-8 overflow-x-auto pb-2">
+      <div className="flex gap-2 sm:gap-3 mb-8 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
         <button
           onClick={() => {
             setActiveTab("pending");
             trackTabChange("pending");
           }}
-          className={`flex-1 sm:flex-none px-6 py-3 rounded-lg font-light tracking-wider transition-all duration-200 touch-manipulation whitespace-nowrap ${
+          className={`flex-1 sm:flex-none px-3 sm:px-6 py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm font-light tracking-wider transition-all duration-200 touch-manipulation whitespace-nowrap ${
             activeTab === "pending"
               ? "gradient-primary text-white"
               : "glass hover:glass-hover text-slate-400 hover:text-white"
           }`}
         >
-          Pending ({pendingTracks.length})
+          <span className="hidden sm:inline">Pending ({pendingTracks.length})</span>
+          <span className="sm:hidden">Pending</span>
+          <span className="sm:hidden block text-xs mt-0.5">{pendingTracks.length}</span>
         </button>
         <button
           onClick={() => {
             setActiveTab("played");
             trackTabChange("played");
           }}
-          className={`flex-1 sm:flex-none px-6 py-3 rounded-lg font-light tracking-wider transition-all duration-200 touch-manipulation whitespace-nowrap ${
+          className={`flex-1 sm:flex-none px-3 sm:px-6 py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm font-light tracking-wider transition-all duration-200 touch-manipulation whitespace-nowrap ${
             activeTab === "played"
               ? "gradient-primary text-white"
               : "glass hover:glass-hover text-slate-400 hover:text-white"
           }`}
         >
-          Played ({playedTracks.length})
+          <span className="hidden sm:inline">Played ({playedTracks.length})</span>
+          <span className="sm:hidden">Played</span>
+          <span className="sm:hidden block text-xs mt-0.5">{playedTracks.length}</span>
         </button>
         <button
           onClick={() => {
             setActiveTab("analytics");
             trackTabChange("analytics");
           }}
-          className={`flex-1 sm:flex-none px-6 py-3 rounded-lg font-light tracking-wider transition-all duration-200 touch-manipulation whitespace-nowrap ${
+          className={`flex-1 sm:flex-none px-3 sm:px-6 py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm font-light tracking-wider transition-all duration-200 touch-manipulation whitespace-nowrap ${
             activeTab === "analytics"
               ? "gradient-primary text-white"
               : "glass hover:glass-hover text-slate-400 hover:text-white"
@@ -375,9 +402,9 @@ export default function AdminPage() {
       {activeTab === "analytics" && (
         <div className="space-y-6">
           {/* サマリーカード */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="glass rounded-lg p-6 text-center">
-              <div className="text-3xl font-extralight text-white mb-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="glass rounded-lg p-4 sm:p-6 text-center">
+              <div className="text-2xl sm:text-3xl font-extralight text-white mb-1 sm:mb-2">
                 {analyticsData.totalPageViews}
               </div>
               <div className="text-xs text-slate-500 tracking-widest uppercase">
@@ -385,8 +412,8 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="glass rounded-lg p-6 text-center">
-              <div className="text-3xl font-extralight text-purple-400 mb-2">
+            <div className="glass rounded-lg p-4 sm:p-6 text-center">
+              <div className="text-2xl sm:text-3xl font-extralight text-purple-400 mb-1 sm:mb-2">
                 {analyticsData.uniqueSessions}
               </div>
               <div className="text-xs text-slate-500 tracking-widest uppercase">
@@ -394,8 +421,8 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="glass rounded-lg p-6 text-center">
-              <div className="text-3xl font-extralight text-purple-400 mb-2">
+            <div className="glass rounded-lg p-4 sm:p-6 text-center">
+              <div className="text-2xl sm:text-3xl font-extralight text-purple-400 mb-1 sm:mb-2">
                 {analyticsData.requestSubmissions}
               </div>
               <div className="text-xs text-slate-500 tracking-widest uppercase">
@@ -403,8 +430,8 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="glass rounded-lg p-6 text-center">
-              <div className="text-3xl font-extralight text-purple-400 mb-2">
+            <div className="glass rounded-lg p-4 sm:p-6 text-center">
+              <div className="text-2xl sm:text-3xl font-extralight text-purple-400 mb-1 sm:mb-2">
                 {analyticsData.totalPageViews > 0
                   ? ((analyticsData.requestSubmissions / analyticsData.totalPageViews) * 100).toFixed(1)
                   : "0"}%
@@ -416,23 +443,23 @@ export default function AdminPage() {
           </div>
 
           {/* ページ別内訳 */}
-          <div className="glass rounded-lg p-6">
-            <h2 className="text-sm font-light text-slate-500 mb-6 tracking-widest uppercase">
+          <div className="glass rounded-lg p-4 sm:p-6">
+            <h2 className="text-xs sm:text-sm font-light text-slate-500 mb-4 sm:mb-6 tracking-widest uppercase">
               Page Breakdown
             </h2>
             {Object.keys(analyticsData.pageBreakdown).length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {Object.entries(analyticsData.pageBreakdown)
                   .sort(([, a], [, b]) => b - a)
                   .map(([page, count]) => (
                     <div
                       key={page}
-                      className="flex items-center justify-between p-4 rounded-lg glass"
+                      className="flex items-center justify-between p-3 sm:p-4 rounded-lg glass"
                     >
-                      <div className="font-light text-white tracking-wide capitalize">
+                      <div className="font-light text-white tracking-wide capitalize text-sm sm:text-base">
                         {page}
                       </div>
-                      <div className="text-purple-400 font-light tracking-wide">
+                      <div className="text-purple-400 font-light tracking-wide text-sm sm:text-base">
                         {count}
                       </div>
                     </div>
@@ -464,26 +491,26 @@ export default function AdminPage() {
           className="glass rounded-lg mb-3 overflow-hidden hover:glass-hover hover:border-purple-500 transition-all duration-200"
         >
           {/* メイン情報 */}
-          <div className="p-6 flex items-center gap-5">
+          <div className="p-4 sm:p-6 flex items-center gap-3 sm:gap-5">
             {/* アートワーク */}
             <Image
               src={track.image || "/placeholder.png"}
               alt={track.title}
-              width={80}
-              height={80}
-              className="w-20 h-20 rounded object-cover flex-shrink-0"
+              width={64}
+              height={64}
+              className="w-16 h-16 sm:w-20 sm:h-20 rounded object-cover flex-shrink-0"
               unoptimized={!track.image}
             />
 
             {/* 曲情報 */}
             <div className="flex-grow min-w-0">
-              <div className="font-light text-lg truncate text-white tracking-wide">{track.title}</div>
-              <div className="text-slate-500 text-sm truncate tracking-wide">
+              <div className="font-light text-base sm:text-lg truncate text-white tracking-wide">{track.title}</div>
+              <div className="text-slate-500 text-xs sm:text-sm truncate tracking-wide">
                 {track.artist}
               </div>
               <button
                 onClick={() => toggleRequests(track.id)}
-                className="inline-flex items-center gap-2 mt-3 text-xs text-purple-400 hover:text-purple-300
+                className="inline-flex items-center gap-2 mt-2 sm:mt-3 text-xs text-purple-400 hover:text-purple-300
                          transition-colors tracking-wider"
               >
                 <span className="hidden sm:inline">{track.totalRequests} {track.totalRequests === 1 ? 'request' : 'requests'}</span>
@@ -492,7 +519,7 @@ export default function AdminPage() {
               </button>
               {/* 再生日時 */}
               {activeTab === "played" && track.playedAt?.toDate?.() && (
-                <div className="text-purple-400 text-xs mt-2 tracking-wide">
+                <div className="text-purple-400 text-xs mt-1 sm:mt-2 tracking-wide">
                   Played {new Date(track.playedAt.toDate()).toLocaleString("ja-JP", {
                     month: "short",
                     day: "numeric",
@@ -507,49 +534,50 @@ export default function AdminPage() {
             {activeTab === "pending" && (
               <button
                 onClick={() => markAsPlayed(track.id, track.title)}
-                className="gradient-primary px-5 py-3 rounded-lg text-white text-sm font-light tracking-wider
+                className="gradient-primary px-3 sm:px-5 py-2 sm:py-3 rounded-lg text-white text-xs sm:text-sm font-light tracking-wider
                          hover:opacity-90 active:scale-95
-                         transition-all duration-200 flex-shrink-0 touch-manipulation"
+                         transition-all duration-200 flex-shrink-0 touch-manipulation whitespace-nowrap"
               >
-                Mark Played
+                <span className="hidden sm:inline">Mark Played</span>
+                <span className="sm:hidden">✓</span>
               </button>
             )}
           </div>
 
           {/* リクエスト詳細 */}
           {!collapsedTrackIds.has(track.id) && (
-            <div className="border-t border-slate-800 bg-black/50 p-6">
+            <div className="border-t border-slate-800 bg-black/50 p-4 sm:p-6">
               {track.requests && track.requests.length > 0 ? (
-                <div className="space-y-3">
-                  <div className="text-xs font-light text-slate-500 uppercase tracking-widest mb-4">
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="text-xs font-light text-slate-500 uppercase tracking-widest mb-3 sm:mb-4">
                     Requests ({track.requests.length})
                   </div>
                   {track.requests.map((request, index) => (
                     <div
                       key={index}
-                      className="glass rounded-lg p-4 hover:glass-hover transition-all duration-200"
+                      className="glass rounded-lg p-3 sm:p-4 hover:glass-hover transition-all duration-200"
                     >
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start justify-between gap-2 sm:gap-3">
                         <div className="flex-grow min-w-0">
                           {/* ニックネーム */}
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white font-light text-sm">
+                          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-purple-500 flex items-center justify-center text-white font-light text-xs sm:text-sm flex-shrink-0">
                               {request.nickname.charAt(0).toUpperCase()}
                             </div>
-                            <div className="font-light text-white tracking-wide">
+                            <div className="font-light text-white tracking-wide text-sm sm:text-base truncate">
                               {request.nickname}
                             </div>
                           </div>
 
                           {/* メッセージ */}
                           {request.message && (
-                            <div className="text-sm text-slate-400 mt-2 pl-11 break-words glass rounded-lg p-3 tracking-wide">
+                            <div className="text-xs sm:text-sm text-slate-400 mt-2 pl-8 sm:pl-11 break-words glass rounded-lg p-2 sm:p-3 tracking-wide">
                               {request.message}
                             </div>
                           )}
 
                           {/* 時刻 */}
-                          <div className="text-xs text-slate-600 mt-2 pl-11 tracking-wide">
+                          <div className="text-xs text-slate-600 mt-2 pl-8 sm:pl-11 tracking-wide">
                             {request.requestedAt?.toDate?.()
                               ? new Date(
                                   request.requestedAt.toDate()
@@ -566,11 +594,12 @@ export default function AdminPage() {
                         {/* 削除ボタン */}
                         <button
                           onClick={() => deleteRequestHandler(track.id, request.id!, track.title)}
-                          className="px-3 py-1.5 glass hover:glass-hover text-slate-500 hover:text-purple-400
-                                   text-xs rounded-lg transition-all flex-shrink-0 touch-manipulation tracking-wide"
+                          className="px-2 sm:px-3 py-1.5 glass hover:glass-hover text-slate-500 hover:text-purple-400
+                                   text-xs rounded-lg transition-all flex-shrink-0 touch-manipulation tracking-wide whitespace-nowrap"
                           title="Delete"
                         >
-                          Delete
+                          <span className="hidden sm:inline">Delete</span>
+                          <span className="sm:hidden">✕</span>
                         </button>
                       </div>
                     </div>
