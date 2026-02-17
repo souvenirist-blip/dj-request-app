@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { db } from "../src/lib/firebase";
 import {
   doc,
@@ -15,11 +16,13 @@ import {
 } from "firebase/firestore";
 import { SpotifyTrack, SpotifySearchResponse, Toast } from "../src/types";
 import ToastContainer from "../src/components/ToastContainer";
+// import ShareButtons from "../src/components/ShareButtons";
 import {
   trackSearch,
   trackTrackSelect,
   trackRequestSubmit,
 } from "../src/lib/analytics";
+import { trackPageView, trackRequestSubmission } from "../src/lib/analytics-firebase";
 
 export default function Home() {
   const [nickname, setNickname] = useState("");
@@ -30,8 +33,18 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [isManualMode, setIsManualMode] = useState(false);
+  const [manualTrackName, setManualTrackName] = useState("");
+  const [manualArtistName, setManualArtistName] = useState("");
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [sharedTrack, setSharedTrack] = useState<{ title: string; artist: string } | null>(null);
 
-  // 🎨 トースト通知を追加
+  useEffect(() => {
+    document.title = "Music Request";
+    trackPageView("home");
+  }, []);
+
+  // トースト通知を追加
   const addToast = (message: string, type: Toast["type"]) => {
     const id = Date.now().toString();
     setToasts((prev) => [...prev, { id, message, type }]);
@@ -147,13 +160,26 @@ export default function Home() {
       // GA: リクエスト送信イベント
       trackRequestSubmit(selectedTrack.name, selectedTrack.artists[0].name);
 
+      // Firebase Analytics: リクエスト送信
+      trackRequestSubmission();
+
       addToast("リクエストを送信しました！", "success");
+
+      // シェアモーダルを表示
+      // setSharedTrack({
+      //   title: selectedTrack.name,
+      //   artist: selectedTrack.artists[0].name,
+      // });
+      // setShowShareModal(true);
 
       setNickname("");
       setSearchQuery("");
       setSelectedTrack(null);
       setMessage("");
       setResults([]);
+      setIsManualMode(false);
+      setManualTrackName("");
+      setManualArtistName("");
     } catch (error) {
       console.error(error);
       addToast("エラーが発生しました。もう一度お試しください", "error");
@@ -167,83 +193,194 @@ export default function Home() {
       <ToastContainer toasts={toasts} onClose={removeToast} />
       <div className="flex flex-col p-4 sm:p-6 gap-5 sm:gap-6 max-w-md mx-auto min-h-screen animate-fade-in">
         {/* ヘッダー */}
-        <div className="text-center pt-4 pb-2">
-          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-400 via-purple-300 to-cyan-400 bg-clip-text text-transparent mb-2">
-            🎧 SDC Song Request
+        <div className="text-center pt-8 pb-6">
+          <h1 className="text-4xl sm:text-5xl font-extralight tracking-widest text-white mb-6">
+            Music Request
           </h1>
-          <p className="text-slate-400 text-sm">好きな曲をリクエストしよう</p>
+          <div className="flex gap-4 justify-center text-sm flex-wrap">
+            <Link
+              href="/requests"
+              className="text-slate-400 hover:text-purple-400 transition-colors tracking-wide"
+            >
+              Requests
+            </Link>
+            <span className="text-slate-700">|</span>
+            <Link
+              href="/history"
+              className="text-slate-400 hover:text-purple-400 transition-colors tracking-wide"
+            >
+              History
+            </Link>
+            <span className="text-slate-700">|</span>
+            <Link
+              href="/stats"
+              className="text-slate-400 hover:text-purple-400 transition-colors tracking-wide"
+            >
+              Stats
+            </Link>
+          </div>
         </div>
 
         {/* ニックネーム入力 */}
-        <div className="space-y-2">
-          <label htmlFor="nickname" className="block text-sm font-semibold text-slate-300 pl-1">
+        <div className="space-y-3">
+          <label htmlFor="nickname" className="block text-xs font-normal text-slate-500 tracking-wider uppercase">
             Nickname
           </label>
           <input
             id="nickname"
             type="text"
-            placeholder="Enter your nickname"
+            placeholder="Your nickname"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
-            className="w-full glass p-4 rounded-xl placeholder:text-slate-400
-                       focus:outline-none focus:ring-2 focus:ring-purple-500 focus:glass-hover
-                       transition-all duration-200 text-white"
+            className="w-full glass p-5 rounded-lg placeholder:text-slate-600
+                       focus:outline-none focus:border-purple-500 focus:glass-hover
+                       transition-all duration-200 text-white tracking-wide"
           />
         </div>
 
-        {/* 🔍 検索欄 */}
-        <div className="space-y-2">
-          <label htmlFor="search" className="block text-sm font-semibold text-slate-300 pl-1">
+        {/* 検索欄 */}
+        <div className="space-y-3">
+          <label htmlFor="search" className="block text-xs font-normal text-slate-500 tracking-wider uppercase">
             Search Song
           </label>
           <div className="relative">
             <input
               id="search"
               type="text"
-              placeholder="🔍 Search for a song"
+              placeholder="Song title or artist"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
                 setSelectedTrack(null);
               }}
-              className="w-full glass p-4 rounded-xl placeholder:text-slate-400
-                         focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:glass-hover
-                         transition-all duration-200 text-white"
+              className="w-full glass p-5 rounded-lg placeholder:text-slate-600
+                         focus:outline-none focus:border-purple-500 focus:glass-hover
+                         transition-all duration-200 text-white tracking-wide"
+              disabled={isManualMode}
             />
             {searching && (
               <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
               </div>
             )}
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              setIsManualMode(!isManualMode);
+              setSearchQuery("");
+              setResults([]);
+              setSelectedTrack(null);
+              setManualTrackName("");
+              setManualArtistName("");
+            }}
+            className="text-xs text-slate-500 hover:text-purple-400 transition-colors tracking-wide"
+          >
+            {isManualMode ? "← Back to search" : "Manual input"}
+          </button>
         </div>
 
-        {/* 🎵 検索結果一覧 */}
+        {/* 手動入力フォーム */}
+        {isManualMode && !selectedTrack && (
+          <div className="space-y-4 glass p-6 rounded-lg">
+            <div className="space-y-3">
+              <label htmlFor="manualTrackName" className="block text-xs font-normal text-slate-500 tracking-wider uppercase">
+                Track Name
+              </label>
+              <input
+                id="manualTrackName"
+                type="text"
+                placeholder="Track name"
+                value={manualTrackName}
+                onChange={(e) => setManualTrackName(e.target.value)}
+                className="w-full glass p-4 rounded-lg placeholder:text-slate-600
+                         focus:outline-none focus:border-purple-500 focus:glass-hover
+                         transition-all duration-200 text-white tracking-wide"
+              />
+            </div>
+            <div className="space-y-3">
+              <label htmlFor="manualArtistName" className="block text-xs font-normal text-slate-500 tracking-wider uppercase">
+                Artist Name
+              </label>
+              <input
+                id="manualArtistName"
+                type="text"
+                placeholder="Artist name"
+                value={manualArtistName}
+                onChange={(e) => setManualArtistName(e.target.value)}
+                className="w-full glass p-4 rounded-lg placeholder:text-slate-600
+                         focus:outline-none focus:border-purple-500 focus:glass-hover
+                         transition-all duration-200 text-white tracking-wide"
+              />
+            </div>
+            <button
+              onClick={() => {
+                if (!manualTrackName || !manualArtistName) {
+                  addToast("Please enter track and artist name", "error");
+                  return;
+                }
+                const manualTrack: SpotifyTrack = {
+                  id: `manual_${manualTrackName.replace(/\s/g, "_")}_${manualArtistName.replace(/\s/g, "_")}`,
+                  name: manualTrackName,
+                  artists: [{
+                    id: "manual",
+                    name: manualArtistName,
+                    type: "artist",
+                    uri: "",
+                    external_urls: { spotify: "" },
+                    href: ""
+                  }],
+                  album: {
+                    id: "manual",
+                    name: manualTrackName,
+                    album_type: "album",
+                    release_date: "",
+                    images: [],
+                    artists: [],
+                    external_urls: { spotify: "" }
+                  },
+                  duration_ms: 0,
+                  explicit: false,
+                  external_urls: { spotify: "" },
+                  uri: "",
+                  href: ""
+                };
+                setSelectedTrack(manualTrack);
+                trackTrackSelect(manualTrackName, manualArtistName);
+              }}
+              className="w-full gradient-primary py-4 rounded-lg text-white font-light tracking-wider
+                       hover:opacity-90 active:scale-95 transition-all duration-200"
+            >
+              Select
+            </button>
+          </div>
+        )}
+
+        {/* 検索結果一覧 */}
         {!selectedTrack && results.length > 0 && (
-          <div className="flex flex-col gap-3 max-h-96 overflow-y-auto pr-2">
+          <div className="flex flex-col gap-2 max-h-96 overflow-y-auto pr-2">
             {results.map((track) => (
               <div
                 key={track.id}
                 onClick={() => {
                   setSelectedTrack(track);
-                  // GA: 曲選択イベント
                   trackTrackSelect(track.name, track.artists[0].name);
                 }}
-                className="flex items-center gap-4 p-4 rounded-xl glass cursor-pointer
-                         hover:glass-hover hover:scale-[1.02] active:scale-98
-                         transition-all duration-200 touch-manipulation group"
+                className="flex items-center gap-4 p-5 rounded-lg glass cursor-pointer
+                         hover:glass-hover hover:border-purple-500
+                         transition-all duration-200 touch-manipulation"
               >
                 <Image
                   src={track.album.images[0]?.url || "/placeholder.png"}
                   alt={track.name}
                   width={64}
                   height={64}
-                  className="w-16 h-16 rounded-lg object-cover shadow-lg group-hover:shadow-purple-500/50 transition-shadow"
+                  className="w-16 h-16 rounded object-cover"
                   unoptimized={!track.album.images[0]?.url}
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-white truncate">{track.name}</div>
-                  <div className="text-sm text-slate-400 truncate">
+                  <div className="font-light text-white truncate tracking-wide">{track.name}</div>
+                  <div className="text-sm text-slate-500 truncate tracking-wide">
                     {track.artists[0].name}
                   </div>
                 </div>
@@ -252,59 +389,91 @@ export default function Home() {
         </div>
       )}
 
-        {/* ✅ 選択済み表示 */}
+        {/* 選択済み表示 */}
         {selectedTrack && (
-          <div className="gradient-primary rounded-xl p-1 animate-pulse-glow">
-            <div className="flex items-center gap-4 p-4 rounded-lg bg-slate-900">
+          <div className="glass p-1 rounded-lg border-2 border-purple-500 animate-pulse-glow">
+            <div className="flex items-center gap-4 p-5 rounded-lg bg-black">
               <Image
                 src={selectedTrack.album.images[0]?.url || "/placeholder.png"}
                 alt={selectedTrack.name}
                 width={64}
                 height={64}
-                className="w-16 h-16 rounded-lg object-cover shadow-xl"
+                className="w-16 h-16 rounded object-cover"
                 unoptimized={!selectedTrack.album.images[0]?.url}
               />
               <div className="flex-1 min-w-0">
-                <div className="font-bold text-white truncate text-lg">{selectedTrack.name}</div>
-                <div className="text-sm text-purple-300 truncate">
+                <div className="font-light text-white truncate text-lg tracking-wide">{selectedTrack.name}</div>
+                <div className="text-sm text-slate-500 truncate tracking-wide">
                   {selectedTrack.artists[0].name}
                 </div>
               </div>
-              <div className="text-2xl">✓</div>
+              <div className="text-purple-500 text-sm tracking-wider">SELECTED</div>
             </div>
           </div>
         )}
 
         {/* メッセージ入力 */}
-        <div className="space-y-2">
-          <label htmlFor="message" className="block text-sm font-semibold text-slate-300 pl-1">
-            Message <span className="text-slate-500 font-normal">(Optional)</span>
+        <div className="space-y-3">
+          <label htmlFor="message" className="block text-xs font-normal text-slate-500 tracking-wider uppercase">
+            Message <span className="text-slate-700 font-normal lowercase">(optional)</span>
           </label>
           <textarea
             id="message"
-            placeholder="💬 Leave a message for the DJ"
+            placeholder="Leave a message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={3}
-            className="w-full glass p-4 rounded-xl placeholder:text-slate-400
-                       focus:outline-none focus:ring-2 focus:ring-purple-500 focus:glass-hover
-                       transition-all duration-200 text-white resize-none"
+            className="w-full glass p-5 rounded-lg placeholder:text-slate-600
+                       focus:outline-none focus:border-purple-500 focus:glass-hover
+                       transition-all duration-200 text-white resize-none tracking-wide"
           />
         </div>
 
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="gradient-primary py-4 rounded-xl text-white text-lg font-bold
-                     hover:shadow-lg hover:shadow-purple-500/50 active:scale-95
+          className="gradient-primary w-full py-5 rounded-lg text-white text-lg font-extralight tracking-widest
+                     hover:opacity-90 active:scale-95
                      transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
-                     touch-manipulation min-h-[56px] relative overflow-hidden group"
+                     touch-manipulation min-h-[60px]"
         >
-          <span className="relative z-10">
-            {loading ? "送信中..." : "🎵 リクエスト送信"}
-          </span>
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+          {loading ? "SENDING..." : "SUBMIT REQUEST"}
         </button>
+
+        {/* シェアモーダル */}
+        {/* {showShareModal && sharedTrack && (
+          <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50 animate-fade-in">
+            <div className="glass rounded-lg p-6 max-w-md w-full animate-slide-in">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-extralight text-white mb-4 tracking-widest">
+                  REQUEST SENT
+                </h2>
+                <div className="text-slate-400 text-sm mb-2 tracking-wide">
+                  {sharedTrack.title}
+                </div>
+                <div className="text-slate-600 text-xs mb-6 tracking-wide">
+                  {sharedTrack.artist}
+                </div>
+
+                <ShareButtons
+                  trackTitle={sharedTrack.title}
+                  artistName={sharedTrack.artist}
+                />
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowShareModal(false);
+                  setSharedTrack(null);
+                }}
+                className="w-full glass px-4 py-2.5 rounded-lg text-slate-500 font-light tracking-wider text-sm
+                         hover:glass-hover hover:text-white active:scale-95 transition-all duration-200"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )} */}
       </div>
     </>
   );

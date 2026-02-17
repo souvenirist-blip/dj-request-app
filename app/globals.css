@@ -1,12 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0f172a;
-  --foreground: #f8fafc;
+  --background: #000000;
+  --foreground: #ffffff;
   --primary: #8b5cf6;
   --primary-light: #a78bfa;
-  --accent: #06b6d4;
-  --success: #10b981;
+  --gray-dark: #171717;
+  --gray-medium: #262626;
+  --gray-light: #404040;
 }
 
 @theme inline {
@@ -29,39 +30,35 @@ body {
 
 /* カスタムグラデーション */
 .gradient-primary {
-  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  background: #8b5cf6;
 }
 
 .gradient-accent {
-  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  background: #8b5cf6;
 }
 
 .gradient-success {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: #8b5cf6;
 }
 
 /* グロー効果 */
 .glow-primary {
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.4), 0 0 40px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
 }
 
 .glow-accent {
-  box-shadow: 0 0 20px rgba(6, 182, 212, 0.4), 0 0 40px rgba(6, 182, 212, 0.2);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
 }
 
 /* グラスモーフィズム */
 .glass {
-  background: rgba(30, 41, 59, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #171717;
+  border: 1px solid #262626;
 }
 
 .glass-hover {
-  background: rgba(30, 41, 59, 0.8);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #262626;
+  border: 1px solid #404040;
 }
 
 /* アニメーション */
@@ -89,10 +86,10 @@ body {
 
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+    border-color: #8b5cf6;
   }
   50% {
-    box-shadow: 0 0 30px rgba(139, 92, 246, 0.6);
+    border-color: #a78bfa;
   }
 }
 
@@ -115,14 +112,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
+  background: #171717;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.5);
+  background: #404040;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.7);
+  background: #8b5cf6;
 }

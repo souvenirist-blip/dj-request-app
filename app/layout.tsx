@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "🎧 SDC Song Request",
-  description: "DJイベント用楽曲リクエストアプリ",
+  title: "Music Request",
+  description: "Music request application for DJ events",
 };
 
 export default function RootLayout({
@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" className={inter.variable}>
-      <body className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white antialiased">
+      <body className="bg-black text-white antialiased">
         <GoogleAnalytics />
         {children}
       </body>
