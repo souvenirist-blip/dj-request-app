@@ -41,12 +41,12 @@ DJイベントで使用する楽曲リクエストアプリケーション。参
   - 人気の曲トップ5
   - 人気のアーティストトップ5
 
-### Firebase Analytics
-- ページビュー追跡
-- セッション数計測
-- リクエスト送信数
-- ページ別アクセス統計
-- コンバージョン率計算
+### Firebase Analytics（日次集計）
+- **今日のアクティビティ**: ページビュー数・リクエスト送信数を日次集計
+- **自動リセット**: 毎日JST 6:00に前日のデータを自動削除
+- **低コスト設計**: イベントごとの保存ではなく、カウンター方式で集計
+- **Google Analytics統合**: GA4による詳細な分析も利用可能
+- **統計ダッシュボード**: リアルタイムで今日の統計を表示
 
 ## 技術スタック
 
@@ -115,7 +115,23 @@ firebase init
 firebase deploy --only firestore
 ```
 
-### 6. 開発サーバーの起動
+### 6. Firebase Analytics自動クリーンアップ（オプション）
+
+毎日JST 6:00に前日のAnalyticsデータを自動削除する設定：
+
+詳細は [ANALYTICS_CLEANUP_SETUP.md](./ANALYTICS_CLEANUP_SETUP.md) を参照してください。
+
+```bash
+# functionsディレクトリで依存関係をインストール
+cd functions
+npm install
+
+# Cloud Functionsをデプロイ
+cd ..
+firebase deploy --only functions
+```
+
+### 7. 開発サーバーの起動
 
 ```bash
 npm run dev

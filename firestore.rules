@@ -2,18 +2,27 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // analyticsコレクション
+    // analyticsコレクション（日次集計）
     match /analytics/{analyticsId} {
       // 読み取りは誰でも可能（管理画面で使用）
       allow read: if true;
 
-      // アナリティクスデータの作成は制限付きで許可
-      allow create: if request.resource.data.type in ['page_view', 'request_submission'] &&
-                      request.resource.data.sessionId is string &&
-                      request.resource.data.timestamp != null;
+      // datesサブコレクション
+      match /dates/{dateId} {
+        // 読み取りは誰でも可能
+        allow read: if true;
 
-      // 更新・削除は禁止
-      allow update, delete: if false;
+        // 日次統計の作成・更新を許可（merge操作）
+        allow create, update: if request.resource.data.date is string &&
+                                request.resource.data.lastUpdated is string;
+
+        // 削除は禁止（Cloud Functionsのみが削除可能）
+        allow delete: if false;
+      }
+
+      // 古い形式のanalyticsドキュメントは読み取りのみ
+      allow read: if true;
+      allow write: if false;
     }
 
     // tracksコレクション

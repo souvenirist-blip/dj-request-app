@@ -13,7 +13,7 @@ import {
   orderBy as firestoreOrderBy,
 } from "firebase/firestore";
 import { Track, TrackRequest } from "../../src/types";
-import { trackPageView } from "../../src/lib/analytics-firebase";
+import { trackPageView, getTodayStats } from "../../src/lib/analytics-firebase";
 
 interface TrackWithRequests extends Track {
   requests?: TrackRequest[];
@@ -46,10 +46,18 @@ export default function StatsPage() {
   const [allTracks, setAllTracks] = useState<TrackWithRequests[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const [todayStats, setTodayStats] = useState<any>(null);
 
   useEffect(() => {
     document.title = "Statistics | Music Request";
     trackPageView("stats");
+
+    // 今日の統計を取得
+    const fetchTodayStats = async () => {
+      const stats = await getTodayStats();
+      setTodayStats(stats);
+    };
+    fetchTodayStats();
   }, []);
 
   // 認証状態をチェック
@@ -187,6 +195,27 @@ export default function StatsPage() {
           >
             History
           </Link>
+        </div>
+      </div>
+
+      {/* 今日の統計カード */}
+      <div className="glass rounded-lg p-6 mb-6 animate-fade-in">
+        <h2 className="text-sm font-light text-slate-500 mb-4 tracking-widest uppercase">
+          Today's Activity (Resets at 6:00 AM JST)
+        </h2>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="text-center">
+            <div className="text-2xl font-extralight text-purple-400 mb-2">
+              {todayStats?.pageViews?.total || 0}
+            </div>
+            <div className="text-xs text-slate-500 tracking-widest uppercase">Page Views</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-extralight text-purple-400 mb-2">
+              {todayStats?.requestSubmissions || 0}
+            </div>
+            <div className="text-xs text-slate-500 tracking-widest uppercase">Requests Sent</div>
+          </div>
         </div>
       </div>
 

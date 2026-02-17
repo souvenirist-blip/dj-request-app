@@ -236,12 +236,12 @@ export default function Home() {
         {/* ニックネーム入力 */}
         <div className="space-y-3">
           <label htmlFor="nickname" className="block text-xs font-normal text-slate-500 tracking-wider uppercase">
-            Nickname
+            ニックネーム
           </label>
           <input
             id="nickname"
             type="text"
-            placeholder="Your nickname"
+            placeholder="ニックネームを入力"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
             className="w-full glass p-5 rounded-lg placeholder:text-slate-600
@@ -253,13 +253,13 @@ export default function Home() {
         {/* 検索欄 */}
         <div className="space-y-3">
           <label htmlFor="search" className="block text-xs font-normal text-slate-500 tracking-wider uppercase">
-            Search Song
+            曲を検索
           </label>
           <div className="relative">
             <input
               id="search"
               type="text"
-              placeholder="Song title or artist"
+              placeholder="曲名またはアーティスト名"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -288,7 +288,7 @@ export default function Home() {
             }}
             className="text-xs text-slate-500 hover:text-purple-400 transition-colors tracking-wide"
           >
-            {isManualMode ? "← Back to search" : "Manual input"}
+            {isManualMode ? "← 検索に戻る" : "見つからない場合は手動で入力"}
           </button>
         </div>
 
@@ -297,12 +297,12 @@ export default function Home() {
           <div className="space-y-4 glass p-6 rounded-lg">
             <div className="space-y-3">
               <label htmlFor="manualTrackName" className="block text-xs font-normal text-slate-500 tracking-wider uppercase">
-                Track Name
+                曲名
               </label>
               <input
                 id="manualTrackName"
                 type="text"
-                placeholder="Track name"
+                placeholder="曲名を入力"
                 value={manualTrackName}
                 onChange={(e) => setManualTrackName(e.target.value)}
                 className="w-full glass p-4 rounded-lg placeholder:text-slate-600
@@ -312,12 +312,12 @@ export default function Home() {
             </div>
             <div className="space-y-3">
               <label htmlFor="manualArtistName" className="block text-xs font-normal text-slate-500 tracking-wider uppercase">
-                Artist Name
+                アーティスト名
               </label>
               <input
                 id="manualArtistName"
                 type="text"
-                placeholder="Artist name"
+                placeholder="アーティスト名を入力"
                 value={manualArtistName}
                 onChange={(e) => setManualArtistName(e.target.value)}
                 className="w-full glass p-4 rounded-lg placeholder:text-slate-600
@@ -328,7 +328,7 @@ export default function Home() {
             <button
               onClick={() => {
                 if (!manualTrackName || !manualArtistName) {
-                  addToast("Please enter track and artist name", "error");
+                  addToast("曲名とアーティスト名を入力してください", "error");
                   return;
                 }
                 const manualTrack: SpotifyTrack = {
@@ -363,7 +363,7 @@ export default function Home() {
               className="w-full gradient-primary py-4 rounded-lg text-white font-light tracking-wider
                        hover:opacity-90 active:scale-95 transition-all duration-200"
             >
-              Select
+              選択
             </button>
           </div>
         )}
@@ -419,7 +419,7 @@ export default function Home() {
                   {selectedTrack.artists[0].name}
                 </div>
               </div>
-              <div className="text-purple-500 text-sm tracking-wider">SELECTED</div>
+              <div className="text-purple-500 text-sm tracking-wider">選択中</div>
             </div>
           </div>
         )}
@@ -427,11 +427,11 @@ export default function Home() {
         {/* メッセージ入力 */}
         <div className="space-y-3">
           <label htmlFor="message" className="block text-xs font-normal text-slate-500 tracking-wider uppercase">
-            Message <span className="text-slate-700 font-normal lowercase">(optional)</span>
+            メッセージ <span className="text-slate-700 font-normal lowercase">(任意)</span>
           </label>
           <textarea
             id="message"
-            placeholder="Leave a message"
+            placeholder="メッセージを入力"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={3}
@@ -450,15 +450,15 @@ export default function Home() {
                      touch-manipulation min-h-[60px]"
         >
           {loading
-            ? "SENDING..."
+            ? "送信中..."
             : cooldownRemaining > 0
-            ? `WAIT ${cooldownRemaining}S`
-            : "SUBMIT REQUEST"}
+            ? `待機中 ${cooldownRemaining}秒`
+            : "リクエストを送信"}
         </button>
 
         {cooldownRemaining > 0 && !loading && (
           <div className="text-center text-slate-500 text-xs tracking-wide mt-2">
-            You can submit a new request in {cooldownRemaining} second{cooldownRemaining !== 1 ? 's' : ''}
+            {cooldownRemaining}秒後に再度リクエストできます
           </div>
         )}
 
