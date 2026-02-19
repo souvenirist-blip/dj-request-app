@@ -25,7 +25,6 @@ import {
   trackDeleteRequest,
   trackTabChange,
 } from "../../src/lib/analytics";
-import { trackPageView } from "../../src/lib/analytics-firebase";
 
 interface TrackWithRequests extends Track {
   requests?: TrackRequest[];
@@ -47,7 +46,6 @@ export default function AdminPage() {
 
   useEffect(() => {
     document.title = "Dashboard | Music Request";
-    trackPageView("admin");
   }, []);
 
   // 認証状態をチェック

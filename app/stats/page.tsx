@@ -14,7 +14,7 @@ import {
   orderBy as firestoreOrderBy,
 } from "firebase/firestore";
 import { Track, TrackRequest } from "../../src/types";
-import { trackPageView, getTodayStats } from "../../src/lib/analytics-firebase";
+import { getTodayStats } from "../../src/lib/analytics-firebase";
 
 interface TrackWithRequests extends Track {
   requests?: TrackRequest[];
@@ -52,7 +52,6 @@ export default function StatsPage() {
 
   useEffect(() => {
     document.title = "Statistics | Music Request";
-    trackPageView("stats");
 
     // 今日の統計を取得
     const fetchTodayStats = async () => {

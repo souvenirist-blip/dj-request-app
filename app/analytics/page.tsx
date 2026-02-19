@@ -3,18 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { db } from "../../src/lib/firebase";
-import {
-  collection,
-  query,
-  onSnapshot,
-} from "firebase/firestore";
-import { trackPageView } from "../../src/lib/analytics-firebase";
+import { getTodayStats } from "../../src/lib/analytics-firebase";
 
 export default function AnalyticsPage() {
   const [analyticsData, setAnalyticsData] = useState({
     totalPageViews: 0,
-    uniqueSessions: 0,
     requestSubmissions: 0,
     pageBreakdown: {} as Record<string, number>,
   });
@@ -24,7 +17,6 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     document.title = "Analytics | Music Request";
-    trackPageView("analytics");
   }, []);
 
   // 認証状態をチェック
@@ -43,39 +35,35 @@ export default function AnalyticsPage() {
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const analyticsQuery = query(collection(db, "analytics"));
+    const fetchAnalytics = async () => {
+      const stats = await getTodayStats();
 
-    const unsubscribe = onSnapshot(analyticsQuery, (snapshot) => {
-      let totalPageViews = 0;
-      let requestSubmissions = 0;
-      const uniqueSessions = new Set<string>();
-      const pageBreakdown: Record<string, number> = {};
+      if (stats) {
+        const pageBreakdown: Record<string, number> = {};
 
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-
-        if (data.sessionId) {
-          uniqueSessions.add(data.sessionId);
+        // pageViewsオブジェクトからtotal以外の全てのページを取得
+        if (stats.pageViews) {
+          Object.entries(stats.pageViews).forEach(([key, value]) => {
+            if (key !== "total" && typeof value === "number") {
+              pageBreakdown[key] = value;
+            }
+          });
         }
 
-        if (data.type === "page_view") {
-          totalPageViews++;
-          const page = data.page || "unknown";
-          pageBreakdown[page] = (pageBreakdown[page] || 0) + 1;
-        } else if (data.type === "request_submission") {
-          requestSubmissions++;
-        }
-      });
+        setAnalyticsData({
+          totalPageViews: stats.pageViews?.total || 0,
+          requestSubmissions: stats.requestSubmissions || 0,
+          pageBreakdown,
+        });
+      }
+    };
 
-      setAnalyticsData({
-        totalPageViews,
-        uniqueSessions: uniqueSessions.size,
-        requestSubmissions,
-        pageBreakdown,
-      });
-    });
+    fetchAnalytics();
 
-    return () => unsubscribe();
+    // 定期的に更新（30秒ごと）
+    const interval = setInterval(fetchAnalytics, 30000);
+
+    return () => clearInterval(interval);
   }, [isAuthenticated]);
 
   // 認証チェック中またはリダイレクト中は何も表示しない
@@ -127,6 +115,13 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
+      {/* 今日のデータであることを明示 */}
+      <div className="glass rounded-lg p-4 mb-6 text-center animate-fade-in">
+        <div className="text-sm text-slate-500 tracking-widest uppercase">
+          Today's Activity (Resets at 6:00 AM JST)
+        </div>
+      </div>
+
       {/* サマリーカード */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
         <div className="glass rounded-lg p-5 sm:p-6 text-center animate-fade-in">
@@ -140,23 +135,14 @@ export default function AnalyticsPage() {
 
         <div className="glass rounded-lg p-5 sm:p-6 text-center animate-fade-in" style={{ animationDelay: "50ms" }}>
           <div className="text-2xl sm:text-3xl font-extralight text-purple-400 mb-2">
-            {analyticsData.uniqueSessions}
+            {analyticsData.requestSubmissions}
           </div>
           <div className="text-xs text-slate-500 tracking-widest uppercase">
-            セッション
+            リクエスト送信
           </div>
         </div>
 
         <div className="glass rounded-lg p-5 sm:p-6 text-center animate-fade-in" style={{ animationDelay: "100ms" }}>
-          <div className="text-2xl sm:text-3xl font-extralight text-purple-400 mb-2">
-            {analyticsData.requestSubmissions}
-          </div>
-          <div className="text-xs text-slate-500 tracking-widest uppercase">
-            リクエスト数
-          </div>
-        </div>
-
-        <div className="glass rounded-lg p-5 sm:p-6 text-center animate-fade-in" style={{ animationDelay: "150ms" }}>
           <div className="text-2xl sm:text-3xl font-extralight text-purple-400 mb-2">
             {analyticsData.totalPageViews > 0
               ? ((analyticsData.requestSubmissions / analyticsData.totalPageViews) * 100).toFixed(1)
@@ -164,6 +150,15 @@ export default function AnalyticsPage() {
           </div>
           <div className="text-xs text-slate-500 tracking-widest uppercase">
             コンバージョン率
+          </div>
+        </div>
+
+        <div className="glass rounded-lg p-5 sm:p-6 text-center animate-fade-in" style={{ animationDelay: "150ms" }}>
+          <div className="text-2xl sm:text-3xl font-extralight text-purple-400 mb-2">
+            {Object.keys(analyticsData.pageBreakdown).length}
+          </div>
+          <div className="text-xs text-slate-500 tracking-widest uppercase">
+            ユニークページ
           </div>
         </div>
       </div>

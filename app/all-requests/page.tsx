@@ -13,7 +13,6 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { Track, TrackRequest } from "../../src/types";
-import { trackPageView } from "../../src/lib/analytics-firebase";
 
 interface TrackWithRequests extends Track {
   requests?: TrackRequest[];
@@ -30,7 +29,6 @@ export default function AllRequestsPage() {
 
   useEffect(() => {
     document.title = "All Requests | Music Request";
-    trackPageView("all-requests");
   }, []);
 
   // 認証状態をチェック
