@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { db } from "../../src/lib/firebase";
 // import ShareButtons from "../../src/components/ShareButtons";
 import {
@@ -47,6 +48,7 @@ export default function StatsPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [todayStats, setTodayStats] = useState<any>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     document.title = "Statistics | Music Request";
@@ -172,28 +174,35 @@ export default function StatsPage() {
           Statistics
         </div>
         <div className="text-slate-600 text-xs mb-6 tracking-wide">
-          Real-time dashboard
+          統計
         </div>
         <div className="flex gap-4 justify-center text-sm flex-wrap">
           <Link
             href="/admin"
-            className="text-slate-400 hover:text-purple-400 transition-colors tracking-wide"
+            className={pathname === "/admin" ? "text-purple-400 tracking-wide" : "text-slate-400 hover:text-purple-400 transition-colors tracking-wide"}
           >
-            Admin
+            Dashboard
           </Link>
           <span className="text-slate-700">|</span>
           <Link
-            href="/requests"
-            className="text-slate-400 hover:text-purple-400 transition-colors tracking-wide"
+            href="/all-requests"
+            className={pathname === "/all-requests" ? "text-purple-400 tracking-wide" : "text-slate-400 hover:text-purple-400 transition-colors tracking-wide"}
           >
-            Requests
+            All Requests
           </Link>
           <span className="text-slate-700">|</span>
           <Link
-            href="/history"
-            className="text-slate-400 hover:text-purple-400 transition-colors tracking-wide"
+            href="/stats"
+            className={pathname === "/stats" ? "text-purple-400 tracking-wide" : "text-slate-400 hover:text-purple-400 transition-colors tracking-wide"}
           >
-            History
+            Stats
+          </Link>
+          <span className="text-slate-700">|</span>
+          <Link
+            href="/analytics"
+            className={pathname === "/analytics" ? "text-purple-400 tracking-wide" : "text-slate-400 hover:text-purple-400 transition-colors tracking-wide"}
+          >
+            Analytics
           </Link>
         </div>
       </div>
@@ -328,16 +337,16 @@ export default function StatsPage() {
         </div>
       </div>
 
-      {/* リクエスト数トップ5 */}
+      {/* リクエスト数トップ10 */}
       <div className="glass rounded-lg p-6 mb-8 animate-fade-in" style={{ animationDelay: "300ms" }}>
         <h2 className="text-sm font-light text-slate-500 mb-6 tracking-widest uppercase">
-          Top 5 Requests
+          Top 10 Requests
         </h2>
         {allTracks.length > 0 ? (
           <div className="space-y-3">
             {allTracks
               .sort((a, b) => b.totalRequests - a.totalRequests)
-              .slice(0, 5)
+              .slice(0, 10)
               .map((track, index) => (
                 <div
                   key={track.id}
@@ -389,26 +398,26 @@ export default function StatsPage() {
       <div className="flex gap-3 justify-center pb-8 flex-wrap">
         <Link
           href="/admin"
-          className="gradient-primary px-8 py-3 rounded-lg text-white font-light tracking-wider
+          className="gradient-primary px-6 sm:px-8 py-3 rounded-lg text-white font-light tracking-wider
                    hover:opacity-90 active:scale-95 transition-all duration-200"
         >
-          Admin
+          Dashboard
         </Link>
         <Link
-          href="/requests"
-          className="glass px-8 py-3 rounded-lg text-slate-400 font-light tracking-wider
+          href="/all-requests"
+          className="glass px-6 sm:px-8 py-3 rounded-lg text-slate-400 font-light tracking-wider
                    hover:glass-hover hover:text-white active:scale-95
                    transition-all duration-200"
         >
-          Requests
+          All Requests
         </Link>
         <Link
-          href="/history"
-          className="glass px-8 py-3 rounded-lg text-slate-400 font-light tracking-wider
+          href="/analytics"
+          className="glass px-6 sm:px-8 py-3 rounded-lg text-slate-400 font-light tracking-wider
                    hover:glass-hover hover:text-white active:scale-95
                    transition-all duration-200"
         >
-          History
+          Analytics
         </Link>
       </div>
     </div>

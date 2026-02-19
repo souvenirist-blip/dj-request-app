@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { db } from "../../src/lib/firebase";
 import {
   collection,
@@ -30,7 +31,7 @@ interface TrackWithRequests extends Track {
   requests?: TrackRequest[];
 }
 
-type TabType = "pending" | "played" | "analytics";
+type TabType = "pending" | "played";
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<TabType>("pending");
@@ -42,15 +43,10 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [analyticsData, setAnalyticsData] = useState({
-    totalPageViews: 0,
-    uniqueSessions: 0,
-    requestSubmissions: 0,
-    pageBreakdown: {} as Record<string, number>,
-  });
+  const pathname = usePathname();
 
   useEffect(() => {
-    document.title = "Admin | Music Request";
+    document.title = "Dashboard | Music Request";
     trackPageView("admin");
   }, []);
 
@@ -90,8 +86,7 @@ export default function AdminPage() {
     if (!isAuthenticated) return;
     const q = query(
       collection(db, "tracks"),
-      where("status", "==", "pending"),
-      orderBy("totalRequests", "desc")
+      where("status", "==", "pending")
     );
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
@@ -113,6 +108,17 @@ export default function AdminPage() {
         trackData.requests = requests;
         data.push(trackData);
       }
+
+      // 最新のリクエスト時間でソート（新しい順）
+      data.sort((a, b) => {
+        const aLatestTime = a.requests && a.requests.length > 0
+          ? Math.max(...a.requests.map(r => r.requestedAt?.toDate?.()?.getTime() || 0))
+          : 0;
+        const bLatestTime = b.requests && b.requests.length > 0
+          ? Math.max(...b.requests.map(r => r.requestedAt?.toDate?.()?.getTime() || 0))
+          : 0;
+        return bLatestTime - aLatestTime;
+      });
 
       setPendingTracks(data);
     });
@@ -148,11 +154,15 @@ export default function AdminPage() {
         data.push(trackData);
       }
 
-      // クライアント側でplayedAtでソート（新しい順）
+      // 最新のリクエスト時間でソート（新しい順）
       data.sort((a, b) => {
-        const aTime = a.playedAt?.toDate?.()?.getTime() || 0;
-        const bTime = b.playedAt?.toDate?.()?.getTime() || 0;
-        return bTime - aTime;
+        const aLatestTime = a.requests && a.requests.length > 0
+          ? Math.max(...a.requests.map(r => r.requestedAt?.toDate?.()?.getTime() || 0))
+          : 0;
+        const bLatestTime = b.requests && b.requests.length > 0
+          ? Math.max(...b.requests.map(r => r.requestedAt?.toDate?.()?.getTime() || 0))
+          : 0;
+        return bLatestTime - aLatestTime;
       });
 
       setPlayedTracks(data);
@@ -161,44 +171,6 @@ export default function AdminPage() {
     return () => unsubscribe();
   }, [isAuthenticated]);
 
-  // 📊 アナリティクスデータを取得
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    const analyticsQuery = query(collection(db, "analytics"));
-
-    const unsubscribe = onSnapshot(analyticsQuery, (snapshot) => {
-      let totalPageViews = 0;
-      let requestSubmissions = 0;
-      const uniqueSessions = new Set<string>();
-      const pageBreakdown: Record<string, number> = {};
-
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-
-        if (data.sessionId) {
-          uniqueSessions.add(data.sessionId);
-        }
-
-        if (data.type === "page_view") {
-          totalPageViews++;
-          const page = data.page || "unknown";
-          pageBreakdown[page] = (pageBreakdown[page] || 0) + 1;
-        } else if (data.type === "request_submission") {
-          requestSubmissions++;
-        }
-      });
-
-      setAnalyticsData({
-        totalPageViews,
-        uniqueSessions: uniqueSessions.size,
-        requestSubmissions,
-        pageBreakdown,
-      });
-    });
-
-    return () => unsubscribe();
-  }, [isAuthenticated]);
 
   const markAsPlayed = async (id: string, title: string) => {
     try {
@@ -268,7 +240,7 @@ export default function AdminPage() {
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="glass rounded-lg p-10 w-full max-w-md">
           <h1 className="text-3xl font-extralight tracking-widest mb-2 text-center text-white">
-            Admin
+            Dashboard
           </h1>
           <p className="text-slate-600 text-xs text-center mb-8 tracking-wide">Enter password to login</p>
 
@@ -314,11 +286,8 @@ export default function AdminPage() {
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto min-h-screen">
       {/* ヘッダー */}
-      <div className="flex flex-col gap-4 mb-8 pt-8">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extralight tracking-widest text-white">
-            Admin
-          </h1>
+      <div className="text-center pt-8 pb-8">
+        <div className="flex justify-end mb-4">
           <button
             onClick={handleLogout}
             className="glass px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-light tracking-wider hover:glass-hover hover:text-white
@@ -327,32 +296,48 @@ export default function AdminPage() {
             Logout
           </button>
         </div>
-        <div className="flex gap-2 sm:gap-4 text-xs sm:text-sm flex-wrap">
+        <h1 className="text-4xl sm:text-5xl font-extralight tracking-widest text-white mb-2">
+          Music Request
+        </h1>
+        <div className="text-slate-500 text-sm mb-4 tracking-widest uppercase">
+          Dashboard
+        </div>
+        <div className="text-slate-600 text-xs mb-6 tracking-wide">
+          リクエスト管理
+        </div>
+        <div className="flex gap-4 justify-center text-sm flex-wrap">
           <Link
-            href="/requests"
-            className="text-slate-400 hover:text-purple-400 transition-colors tracking-wide whitespace-nowrap"
+            href="/admin"
+            className={pathname === "/admin" ? "text-purple-400 tracking-wide" : "text-slate-400 hover:text-purple-400 transition-colors tracking-wide"}
           >
-            Requests
+            Dashboard
           </Link>
           <span className="text-slate-700">|</span>
           <Link
-            href="/history"
-            className="text-slate-400 hover:text-purple-400 transition-colors tracking-wide whitespace-nowrap"
+            href="/all-requests"
+            className={pathname === "/all-requests" ? "text-purple-400 tracking-wide" : "text-slate-400 hover:text-purple-400 transition-colors tracking-wide"}
           >
-            History
+            All Requests
           </Link>
           <span className="text-slate-700">|</span>
           <Link
             href="/stats"
-            className="text-slate-400 hover:text-purple-400 transition-colors tracking-wide whitespace-nowrap"
+            className={pathname === "/stats" ? "text-purple-400 tracking-wide" : "text-slate-400 hover:text-purple-400 transition-colors tracking-wide"}
           >
             Stats
+          </Link>
+          <span className="text-slate-700">|</span>
+          <Link
+            href="/analytics"
+            className={pathname === "/analytics" ? "text-purple-400 tracking-wide" : "text-slate-400 hover:text-purple-400 transition-colors tracking-wide"}
+          >
+            Analytics
           </Link>
         </div>
       </div>
 
       {/* タブ切り替え */}
-      <div className="flex gap-2 sm:gap-3 mb-8 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="flex gap-2 sm:gap-3 mb-8 overflow-x-auto pb-2 justify-center">
         <button
           onClick={() => {
             setActiveTab("pending");
@@ -383,96 +368,7 @@ export default function AdminPage() {
           <span className="sm:hidden">Played</span>
           <span className="sm:hidden block text-xs mt-0.5">{playedTracks.length}</span>
         </button>
-        <button
-          onClick={() => {
-            setActiveTab("analytics");
-            trackTabChange("analytics");
-          }}
-          className={`flex-1 sm:flex-none px-3 sm:px-6 py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm font-light tracking-wider transition-all duration-200 touch-manipulation whitespace-nowrap ${
-            activeTab === "analytics"
-              ? "gradient-primary text-white"
-              : "glass hover:glass-hover text-slate-400 hover:text-white"
-          }`}
-        >
-          Analytics
-        </button>
       </div>
-
-      {/* Analytics タブ */}
-      {activeTab === "analytics" && (
-        <div className="space-y-6">
-          {/* サマリーカード */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="glass rounded-lg p-4 sm:p-6 text-center">
-              <div className="text-2xl sm:text-3xl font-extralight text-white mb-1 sm:mb-2">
-                {analyticsData.totalPageViews}
-              </div>
-              <div className="text-xs text-slate-500 tracking-widest uppercase">
-                Page Views
-              </div>
-            </div>
-
-            <div className="glass rounded-lg p-4 sm:p-6 text-center">
-              <div className="text-2xl sm:text-3xl font-extralight text-purple-400 mb-1 sm:mb-2">
-                {analyticsData.uniqueSessions}
-              </div>
-              <div className="text-xs text-slate-500 tracking-widest uppercase">
-                Sessions
-              </div>
-            </div>
-
-            <div className="glass rounded-lg p-4 sm:p-6 text-center">
-              <div className="text-2xl sm:text-3xl font-extralight text-purple-400 mb-1 sm:mb-2">
-                {analyticsData.requestSubmissions}
-              </div>
-              <div className="text-xs text-slate-500 tracking-widest uppercase">
-                Requests
-              </div>
-            </div>
-
-            <div className="glass rounded-lg p-4 sm:p-6 text-center">
-              <div className="text-2xl sm:text-3xl font-extralight text-purple-400 mb-1 sm:mb-2">
-                {analyticsData.totalPageViews > 0
-                  ? ((analyticsData.requestSubmissions / analyticsData.totalPageViews) * 100).toFixed(1)
-                  : "0"}%
-              </div>
-              <div className="text-xs text-slate-500 tracking-widest uppercase">
-                Conversion
-              </div>
-            </div>
-          </div>
-
-          {/* ページ別内訳 */}
-          <div className="glass rounded-lg p-4 sm:p-6">
-            <h2 className="text-xs sm:text-sm font-light text-slate-500 mb-4 sm:mb-6 tracking-widest uppercase">
-              Page Breakdown
-            </h2>
-            {Object.keys(analyticsData.pageBreakdown).length > 0 ? (
-              <div className="space-y-2 sm:space-y-3">
-                {Object.entries(analyticsData.pageBreakdown)
-                  .sort(([, a], [, b]) => b - a)
-                  .map(([page, count]) => (
-                    <div
-                      key={page}
-                      className="flex items-center justify-between p-3 sm:p-4 rounded-lg glass"
-                    >
-                      <div className="font-light text-white tracking-wide capitalize text-sm sm:text-base">
-                        {page}
-                      </div>
-                      <div className="text-purple-400 font-light tracking-wide text-sm sm:text-base">
-                        {count}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            ) : (
-              <div className="text-center text-slate-600 py-8">
-                <div className="text-sm tracking-wide">No data yet</div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Tracks タブ */}
       {(activeTab === "pending" || activeTab === "played") && tracks.length === 0 && (
@@ -517,10 +413,10 @@ export default function AdminPage() {
                 <span className="sm:hidden">{track.totalRequests}</span>
                 <span>{collapsedTrackIds.has(track.id) ? "▶" : "▼"}</span>
               </button>
-              {/* 再生日時 */}
-              {activeTab === "played" && track.playedAt?.toDate?.() && (
-                <div className="text-purple-400 text-xs mt-1 sm:mt-2 tracking-wide">
-                  Played {new Date(track.playedAt.toDate()).toLocaleString("ja-JP", {
+              {/* 最新リクエスト時刻 */}
+              {track.requests && track.requests.length > 0 && track.requests[0].requestedAt?.toDate?.() && (
+                <div className="text-slate-600 text-xs mt-1 sm:mt-2 tracking-wide">
+                  最新: {new Date(track.requests[0].requestedAt.toDate()).toLocaleString("ja-JP", {
                     month: "short",
                     day: "numeric",
                     hour: "2-digit",

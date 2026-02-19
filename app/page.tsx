@@ -176,9 +176,17 @@ export default function Home() {
           createdAt: serverTimestamp(),
         });
       } else {
-        await updateDoc(trackRef, {
+        const currentData = trackSnap.data();
+        const updates: any = {
           totalRequests: increment(1),
-        });
+        };
+
+        // statusがplayedだったらpendingに戻す
+        if (currentData.status === "played") {
+          updates.status = "pending";
+        }
+
+        await updateDoc(trackRef, updates);
       }
 
       await addDoc(collection(trackRef, "requests"), {
