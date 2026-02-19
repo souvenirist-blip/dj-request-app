@@ -294,9 +294,9 @@ export default function Home() {
               setManualTrackName("");
               setManualArtistName("");
             }}
-            className="text-xs text-slate-500 hover:text-purple-400 transition-colors tracking-wide"
+            className="text-xs text-slate-500 hover:text-purple-400 transition-colors tracking-wide border-b border-dashed border-slate-600 hover:border-purple-400"
           >
-            {isManualMode ? "← 検索に戻る" : "見つからない場合は手動で入力"}
+            {isManualMode ? "← 検索に戻る" : "見つからない場合はこちらから手動で入力"}
           </button>
         </div>
 
