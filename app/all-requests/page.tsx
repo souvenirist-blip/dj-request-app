@@ -143,13 +143,6 @@ export default function AllRequestsPage() {
           >
             Stats
           </Link>
-          <span className="text-slate-700">|</span>
-          <Link
-            href="/analytics"
-            className={pathname === "/analytics" ? "text-purple-400 tracking-wide" : "text-slate-400 hover:text-purple-400 transition-colors tracking-wide"}
-          >
-            Analytics
-          </Link>
         </div>
       </div>
 
@@ -308,14 +301,6 @@ export default function AllRequestsPage() {
                    transition-all duration-200"
         >
           Stats
-        </Link>
-        <Link
-          href="/analytics"
-          className="glass px-6 sm:px-8 py-3 rounded-lg text-slate-400 font-light tracking-wider
-                   hover:glass-hover hover:text-white active:scale-95
-                   transition-all duration-200"
-        >
-          Analytics
         </Link>
       </div>
     </div>

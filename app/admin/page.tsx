@@ -324,13 +324,6 @@ export default function AdminPage() {
           >
             Stats
           </Link>
-          <span className="text-slate-700">|</span>
-          <Link
-            href="/analytics"
-            className={pathname === "/analytics" ? "text-purple-400 tracking-wide" : "text-slate-400 hover:text-purple-400 transition-colors tracking-wide"}
-          >
-            Analytics
-          </Link>
         </div>
       </div>
 

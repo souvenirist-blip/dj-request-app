@@ -196,13 +196,6 @@ export default function StatsPage() {
           >
             Stats
           </Link>
-          <span className="text-slate-700">|</span>
-          <Link
-            href="/analytics"
-            className={pathname === "/analytics" ? "text-purple-400 tracking-wide" : "text-slate-400 hover:text-purple-400 transition-colors tracking-wide"}
-          >
-            Analytics
-          </Link>
         </div>
       </div>
 
@@ -211,7 +204,7 @@ export default function StatsPage() {
         <h2 className="text-sm font-light text-slate-500 mb-4 tracking-widest uppercase">
           Today's Activity (Resets at 6:00 AM JST)
         </h2>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
             <div className="text-2xl font-extralight text-purple-400 mb-2">
               {todayStats?.pageViews?.total || 0}
@@ -222,7 +215,15 @@ export default function StatsPage() {
             <div className="text-2xl font-extralight text-purple-400 mb-2">
               {todayStats?.requestSubmissions || 0}
             </div>
-            <div className="text-xs text-slate-500 tracking-widest uppercase">Requests Sent</div>
+            <div className="text-xs text-slate-500 tracking-widest uppercase">Requests</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-extralight text-purple-400 mb-2">
+              {todayStats?.pageViews?.total > 0
+                ? ((todayStats.requestSubmissions / todayStats.pageViews.total) * 100).toFixed(1)
+                : "0"}%
+            </div>
+            <div className="text-xs text-slate-500 tracking-widest uppercase">Conversion</div>
           </div>
         </div>
       </div>
@@ -409,14 +410,6 @@ export default function StatsPage() {
                    transition-all duration-200"
         >
           All Requests
-        </Link>
-        <Link
-          href="/analytics"
-          className="glass px-6 sm:px-8 py-3 rounded-lg text-slate-400 font-light tracking-wider
-                   hover:glass-hover hover:text-white active:scale-95
-                   transition-all duration-200"
-        >
-          Analytics
         </Link>
       </div>
     </div>
