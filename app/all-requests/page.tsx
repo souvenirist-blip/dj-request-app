@@ -57,6 +57,9 @@ export default function AllRequestsPage() {
           ...docSnap.data(),
         } as TrackWithRequests;
 
+        // 削除済みをスキップ
+        if (trackData.deletedAt) continue;
+
         // リクエスト詳細を取得
         const requestsRef = collection(db, "tracks", docSnap.id, "requests");
         const requestsQuery = query(requestsRef, orderBy("requestedAt", "desc"));
@@ -64,7 +67,11 @@ export default function AllRequestsPage() {
 
         const requests: TrackRequest[] = [];
         requestsSnap.forEach((reqDoc) => {
-          requests.push({ id: reqDoc.id, ...reqDoc.data() } as TrackRequest);
+          const req = { id: reqDoc.id, ...reqDoc.data() } as TrackRequest;
+          // 削除済みを除外
+          if (!req.deletedAt) {
+            requests.push(req);
+          }
         });
 
         trackData.requests = requests;

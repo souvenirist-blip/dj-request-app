@@ -61,6 +61,8 @@ export interface TrackRequest {
   nickname: string;
   message: string;
   requestedAt: any; // Firestore Timestamp
+  deletedAt?: any; // Firestore Timestamp (論理削除の場合のみ)
+  deletedBy?: string; // 削除者 (論理削除の場合のみ)
 }
 
 export interface Track {
@@ -72,6 +74,8 @@ export interface Track {
   status: "pending" | "played";
   createdAt: any; // Firestore Timestamp
   playedAt?: any; // Firestore Timestamp (再生済みの場合のみ)
+  deletedAt?: any; // Firestore Timestamp (論理削除の場合のみ)
+  deletedBy?: string; // 削除者 (論理削除の場合のみ)
 }
 
 // Toast Notification Types

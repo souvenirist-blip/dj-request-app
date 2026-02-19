@@ -36,14 +36,12 @@ service cloud.firestore {
                       request.resource.data.status in ['pending', 'played'] &&
                       request.resource.data.totalRequests is number;
 
-      // 更新は特定のフィールドのみ許可
+      // 更新は特定のフィールドのみ許可（論理削除用フィールドを追加）
       allow update: if request.resource.data.diff(resource.data).affectedKeys()
-                      .hasOnly(['totalRequests', 'status', 'playedAt']);
+                      .hasOnly(['totalRequests', 'status', 'playedAt', 'deletedAt', 'deletedBy']);
 
-      // 削除は制限（管理者のみ）
-      // 注意: 現状はクライアント側で削除を行っているため一時的に許可
-      // 本番環境ではAPI Routeを使用すべき
-      allow delete: if true; // TODO: 管理者認証を追加
+      // 物理削除は完全に禁止
+      allow delete: if false;
 
       // requestsサブコレクション
       match /requests/{requestId} {
@@ -57,12 +55,12 @@ service cloud.firestore {
                         request.resource.data.keys().hasAll(['nickname', 'requestedAt']) &&
                         request.resource.data.keys().hasOnly(['nickname', 'message', 'requestedAt']);
 
-        // 削除は制限（管理者のみ）
-        // 注意: 現状はクライアント側で削除を行っているため一時的に許可
-        allow delete: if true; // TODO: 管理者認証を追加
+        // 更新を許可（論理削除用）
+        allow update: if request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['deletedAt', 'deletedBy']);
 
-        // 更新は禁止
-        allow update: if false;
+        // 物理削除は完全に禁止
+        allow delete: if false;
       }
     }
   }

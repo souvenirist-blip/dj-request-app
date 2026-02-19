@@ -93,6 +93,9 @@ export default function AdminPage() {
       for (const docSnap of snapshot.docs) {
         const trackData = { id: docSnap.id, ...docSnap.data() } as TrackWithRequests;
 
+        // 削除済みをスキップ
+        if (trackData.deletedAt) continue;
+
         // リクエスト詳細を取得
         const requestsRef = collection(db, "tracks", docSnap.id, "requests");
         const requestsQuery = query(requestsRef, orderBy("requestedAt", "desc"));
@@ -100,7 +103,11 @@ export default function AdminPage() {
 
         const requests: TrackRequest[] = [];
         requestsSnap.forEach((reqDoc) => {
-          requests.push({ id: reqDoc.id, ...reqDoc.data() } as TrackRequest);
+          const req = { id: reqDoc.id, ...reqDoc.data() } as TrackRequest;
+          // 削除済みを除外
+          if (!req.deletedAt) {
+            requests.push(req);
+          }
         });
 
         trackData.requests = requests;
@@ -138,6 +145,9 @@ export default function AdminPage() {
       for (const docSnap of snapshot.docs) {
         const trackData = { id: docSnap.id, ...docSnap.data() } as TrackWithRequests;
 
+        // 削除済みをスキップ
+        if (trackData.deletedAt) continue;
+
         // リクエスト詳細を取得
         const requestsRef = collection(db, "tracks", docSnap.id, "requests");
         const requestsQuery = query(requestsRef, orderBy("requestedAt", "desc"));
@@ -145,7 +155,11 @@ export default function AdminPage() {
 
         const requests: TrackRequest[] = [];
         requestsSnap.forEach((reqDoc) => {
-          requests.push({ id: reqDoc.id, ...reqDoc.data() } as TrackRequest);
+          const req = { id: reqDoc.id, ...reqDoc.data() } as TrackRequest;
+          // 削除済みを除外
+          if (!req.deletedAt) {
+            requests.push(req);
+          }
         });
 
         trackData.requests = requests;
@@ -198,15 +212,21 @@ export default function AdminPage() {
     });
   };
 
-  // 🗑️ リクエストを削除
+  // 🗑️ リクエストを削除（論理削除）
   const deleteRequestHandler = async (trackId: string, requestId: string, trackTitle: string) => {
     if (!confirm("このリクエストを削除しますか？")) {
       return;
     }
 
     try {
+      const { serverTimestamp } = await import("firebase/firestore");
       const requestRef = doc(db, "tracks", trackId, "requests", requestId);
-      await deleteDoc(requestRef);
+
+      // 物理削除の代わりに論理削除
+      await updateDoc(requestRef, {
+        deletedAt: serverTimestamp(),
+        deletedBy: "admin",
+      });
 
       // GA: リクエスト削除
       trackDeleteRequest(trackTitle);
@@ -215,15 +235,27 @@ export default function AdminPage() {
       const trackSnap = await getDoc(trackRef);
 
       if (trackSnap.exists()) {
-        const currentRequests = trackSnap.data().totalRequests || 0;
+        // requestsサブコレクションから削除されていないものをカウント
+        const requestsRef = collection(db, "tracks", trackId, "requests");
+        const allRequestsSnap = await getDocs(requestsRef);
+        let activeCount = 0;
+        allRequestsSnap.forEach((doc) => {
+          const data = doc.data();
+          if (!data.deletedAt) {
+            activeCount++;
+          }
+        });
 
-        // リクエストが1件だけの場合は曲ごと削除
-        if (currentRequests <= 1) {
-          await deleteDoc(trackRef);
-        } else {
-          // totalRequestsを減らす
+        // アクティブなリクエストが0件の場合は曲自体を論理削除
+        if (activeCount === 0) {
           await updateDoc(trackRef, {
-            totalRequests: increment(-1),
+            deletedAt: serverTimestamp(),
+            deletedBy: "admin",
+          });
+        } else {
+          // totalRequestsを更新
+          await updateDoc(trackRef, {
+            totalRequests: activeCount,
           });
         }
       }

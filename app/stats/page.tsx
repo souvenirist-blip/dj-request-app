@@ -93,6 +93,9 @@ export default function StatsPage() {
           ...docSnap.data(),
         } as TrackWithRequests;
 
+        // 削除済みをスキップ
+        if (trackData.deletedAt) continue;
+
         // リクエスト詳細を取得
         const requestsRef = collection(db, "tracks", docSnap.id, "requests");
         const requestsQuery = query(requestsRef, firestoreOrderBy("requestedAt", "desc"));
@@ -101,7 +104,10 @@ export default function StatsPage() {
         const requests: TrackRequest[] = [];
         requestsSnap.forEach((reqDoc) => {
           const req = { id: reqDoc.id, ...reqDoc.data() } as TrackRequest;
-          requests.push(req);
+          // 削除済みを除外
+          if (!req.deletedAt) {
+            requests.push(req);
+          }
           usersSet.add(req.nickname);
         });
 
