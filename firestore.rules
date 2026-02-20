@@ -2,6 +2,16 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ヘルパー関数: タイムスタンプの妥当性チェック
+    function isValidTimestamp(value) {
+      return value is timestamp;
+    }
+
+    // ヘルパー関数: 文字列の長さチェック
+    function isValidStringLength(value, maxLength) {
+      return value is string && value.size() > 0 && value.size() <= maxLength;
+    }
+
     // analyticsコレクション（日次集計）
     match /analytics/{analyticsId} {
       // 読み取りは誰でも可能（管理画面で使用）
@@ -13,8 +23,17 @@ service cloud.firestore {
         allow read: if true;
 
         // 日次統計の作成・更新を許可（merge操作）
-        allow create, update: if request.resource.data.date is string &&
-                                request.resource.data.lastUpdated is string;
+        // dateIdはYYYY-MM-DD形式であることを確認
+        allow create, update: if dateId.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+                                request.resource.data.date is string &&
+                                request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+                                request.resource.data.lastUpdated is string &&
+                                // 統計値は非負の整数であることを確認
+                                (request.resource.data.keys().hasAll(['pageViews']) ?
+                                  request.resource.data.pageViews is map : true) &&
+                                (request.resource.data.keys().hasAll(['requestSubmissions']) ?
+                                  request.resource.data.requestSubmissions is int &&
+                                  request.resource.data.requestSubmissions >= 0 : true);
 
         // 削除は禁止（Cloud Functionsのみが削除可能）
         allow delete: if false;
@@ -30,15 +49,37 @@ service cloud.firestore {
       // 読み取りは誰でも可能
       allow read: if true;
 
-      // 作成・更新は制限付きで許可
-      allow create: if request.resource.data.title is string &&
-                      request.resource.data.artist is string &&
+      // 作成は厳格なバリデーション付きで許可
+      allow create: if isValidStringLength(request.resource.data.title, 200) &&
+                      isValidStringLength(request.resource.data.artist, 200) &&
                       request.resource.data.status in ['pending', 'played'] &&
-                      request.resource.data.totalRequests is number;
+                      request.resource.data.totalRequests is int &&
+                      request.resource.data.totalRequests >= 0 &&
+                      // imageはオプショナルだが、存在する場合は文字列
+                      (!request.resource.data.keys().hasAll(['image']) ||
+                        isValidStringLength(request.resource.data.image, 500)) &&
+                      // 必須フィールドのみ存在することを確認
+                      request.resource.data.keys().hasAll(['title', 'artist', 'status', 'totalRequests']);
 
       // 更新は特定のフィールドのみ許可（論理削除用フィールドを追加）
       allow update: if request.resource.data.diff(resource.data).affectedKeys()
-                      .hasOnly(['totalRequests', 'status', 'playedAt', 'deletedAt', 'deletedBy']);
+                      .hasOnly(['totalRequests', 'status', 'playedAt', 'deletedAt', 'deletedBy']) &&
+                      // totalRequestsが更新される場合は非負の整数であることを確認
+                      (!request.resource.data.diff(resource.data).affectedKeys().hasAll(['totalRequests']) ||
+                        (request.resource.data.totalRequests is int &&
+                         request.resource.data.totalRequests >= 0)) &&
+                      // statusが更新される場合は有効な値であることを確認
+                      (!request.resource.data.diff(resource.data).affectedKeys().hasAll(['status']) ||
+                        request.resource.data.status in ['pending', 'played']) &&
+                      // playedAtが追加される場合はtimestamp型であることを確認
+                      (!request.resource.data.diff(resource.data).affectedKeys().hasAll(['playedAt']) ||
+                        isValidTimestamp(request.resource.data.playedAt)) &&
+                      // deletedAtが追加される場合はtimestamp型であることを確認
+                      (!request.resource.data.diff(resource.data).affectedKeys().hasAll(['deletedAt']) ||
+                        isValidTimestamp(request.resource.data.deletedAt)) &&
+                      // deletedByが追加される場合は文字列であることを確認
+                      (!request.resource.data.diff(resource.data).affectedKeys().hasAll(['deletedBy']) ||
+                        isValidStringLength(request.resource.data.deletedBy, 50));
 
       // 物理削除は完全に禁止
       allow delete: if false;
@@ -48,16 +89,27 @@ service cloud.firestore {
         // 読み取りは誰でも可能
         allow read: if true;
 
-        // リクエストの作成は制限付きで許可
-        allow create: if request.resource.data.nickname is string &&
-                        request.resource.data.nickname.size() > 0 &&
-                        request.resource.data.nickname.size() <= 50 &&
+        // リクエストの作成は厳格なバリデーション付きで許可
+        allow create: if isValidStringLength(request.resource.data.nickname, 50) &&
+                        // messageはオプショナルだが、存在する場合は500文字以内
+                        (!request.resource.data.keys().hasAll(['message']) ||
+                          isValidStringLength(request.resource.data.message, 500)) &&
+                        // requestedAtはtimestamp型であることを確認
+                        isValidTimestamp(request.resource.data.requestedAt) &&
+                        // 必須フィールドの存在確認
                         request.resource.data.keys().hasAll(['nickname', 'requestedAt']) &&
+                        // 許可されたフィールドのみ存在することを確認
                         request.resource.data.keys().hasOnly(['nickname', 'message', 'requestedAt']);
 
         // 更新を許可（論理削除用）
         allow update: if request.resource.data.diff(resource.data).affectedKeys()
-                        .hasOnly(['deletedAt', 'deletedBy']);
+                        .hasOnly(['deletedAt', 'deletedBy']) &&
+                        // deletedAtはtimestamp型であることを確認
+                        (!request.resource.data.diff(resource.data).affectedKeys().hasAll(['deletedAt']) ||
+                          isValidTimestamp(request.resource.data.deletedAt)) &&
+                        // deletedByは文字列であることを確認
+                        (!request.resource.data.diff(resource.data).affectedKeys().hasAll(['deletedBy']) ||
+                          isValidStringLength(request.resource.data.deletedBy, 50));
 
         // 物理削除は完全に禁止
         allow delete: if false;

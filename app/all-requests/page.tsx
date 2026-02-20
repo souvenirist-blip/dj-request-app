@@ -33,14 +33,23 @@ export default function AllRequestsPage() {
 
   // 認証状態をチェック
   useEffect(() => {
-    const auth = sessionStorage.getItem("admin_authenticated");
-    if (auth === "true") {
-      setIsAuthenticated(true);
-    } else {
-      // 未認証の場合は管理画面にリダイレクト
-      window.location.href = "/admin";
-    }
-    setIsChecking(false);
+    const checkAuth = async () => {
+      try {
+        const res = await fetch("/api/auth/verify");
+        const data = await res.json();
+        if (data.authenticated) {
+          setIsAuthenticated(true);
+        } else {
+          // 未認証の場合は管理画面にリダイレクト
+          window.location.href = "/admin";
+        }
+      } catch (error) {
+        console.error("認証確認エラー:", error);
+        window.location.href = "/admin";
+      }
+      setIsChecking(false);
+    };
+    checkAuth();
   }, []);
 
   useEffect(() => {

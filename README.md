@@ -23,7 +23,7 @@ DJイベントで使用する楽曲リクエストアプリケーション。参
 - **自動ステータス更新**: 再生済みの曲に新しいリクエストが来ると自動的にpendingに戻る
 
 ### Dashboard画面（/admin）
-- **パスワード認証**: sessionStorageによる認証状態管理
+- **パスワード認証**: API Route + HTTPOnly Cookieによる安全な認証
 - **2つのタブ**:
   - **Pending**: リクエスト中の曲（最新のリクエスト時刻順）
   - **Played**: 再生済みの曲（最新のリクエスト時刻順）
@@ -96,9 +96,11 @@ npm install
 SPOTIFY_CLIENT_ID=your_spotify_client_id
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
 
-# 管理画面パスワード
-NEXT_PUBLIC_ADMIN_PASSWORD=your_admin_password
+# 管理画面パスワード（サーバーサイド専用、クライアントに露出しない）
+ADMIN_PASSWORD=your_admin_password
 ```
+
+⚠️ **重要**: `ADMIN_PASSWORD`は`NEXT_PUBLIC_`プレフィックスを付けないでください。これによりパスワードがサーバーサイドでのみ使用され、クライアントに露出しません。
 
 #### Spotify API の取得方法
 1. [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) にアクセス
@@ -205,6 +207,13 @@ dj-request/
 │   ├── analytics/
 │   │   └── page.tsx          # /statsへリダイレクト
 │   ├── api/
+│   │   ├── auth/
+│   │   │   ├── login/
+│   │   │   │   └── route.ts  # 認証API（ログイン）
+│   │   │   ├── logout/
+│   │   │   │   └── route.ts  # 認証API（ログアウト）
+│   │   │   └── verify/
+│   │   │       └── route.ts  # 認証API（セッション検証）
 │   │   └── spotify/
 │   │       └── search/
 │   │           └── route.ts  # Spotify検索API
@@ -283,7 +292,8 @@ dj-request/
 ### 認証とセキュリティ
 
 - Dashboard、All Requests、Statsページは認証必須
-- 認証状態はsessionStorageで管理
+- 認証はAPI Route経由でサーバーサイドで検証され、HTTPOnly Cookieで管理
+- パスワードはクライアントに露出せず、サーバーサイドでのみ検証
 - 未認証でアクセスすると自動的にDashboardのログイン画面にリダイレクト
 
 ### ナビゲーション構造
@@ -304,7 +314,7 @@ dj-request/
 3. 環境変数を設定:
    - `SPOTIFY_CLIENT_ID`
    - `SPOTIFY_CLIENT_SECRET`
-   - `NEXT_PUBLIC_ADMIN_PASSWORD`
+   - `ADMIN_PASSWORD` (⚠️ `NEXT_PUBLIC_`プレフィックスなし)
 4. デプロイ
 
 #### CLI経由
@@ -323,39 +333,53 @@ firebase deploy
 ## セキュリティ
 
 ### 現在の実装
-- Dashboard: sessionStorageによる簡易認証
-- Firestoreルール: データバリデーションと制限
+- Dashboard: API Route + HTTPOnly Cookieによる安全な認証
+  - パスワードはサーバーサイドのみで検証
+  - セッション情報はHTTPOnly Cookieに保存（XSS対策）
+- Firestoreルール: 厳格なデータバリデーションと制限
+  - 文字列長制限
+  - 型チェック（timestamp、int、stringなど）
+  - 物理削除の完全禁止（論理削除のみ）
+  - 日付形式のバリデーション
 - クールダウン: LocalStorageによるレート制限（1分間に1回）
 - 重複防止: 同一ユーザー・同一曲のリクエスト制限
 
 ### セキュリティルール（firestore.rules）
 
-- **analytics/daily/dates/{date}ドキュメント**: 作成・更新のみ許可、読み取りは全ユーザー可能
+- **analytics/daily/dates/{date}ドキュメント**:
+  - 厳格な日付形式バリデーション（YYYY-MM-DD）
+  - 統計値の型チェック（非負の整数）
+  - 作成・更新のみ許可、物理削除は禁止
+  - 読み取りは全ユーザー可能
 - **tracksコレクション**:
   - 読み取り: 全ユーザー
-  - 作成: バリデーション付きで許可
-  - 更新: 特定フィールドのみ許可
-  - 削除: 許可（TODO: 管理者認証）
+  - 作成: 厳格なバリデーション付き（文字列長、型チェック）
+  - 更新: 特定フィールドのみ許可（totalRequests、status、playedAt、deletedAt、deletedBy）
+  - 物理削除: 完全に禁止（論理削除のみ）
 - **requestsサブコレクション**:
   - 読み取り: 全ユーザー
-  - 作成: バリデーション付きで許可（ニックネーム必須、文字数制限）
-  - 削除: 許可（TODO: 管理者認証）
-  - 更新: 禁止
+  - 作成: 厳格なバリデーション付き（ニックネーム必須50文字以内、メッセージ500文字以内、timestamp型チェック）
+  - 更新: 論理削除フィールドのみ許可
+  - 物理削除: 完全に禁止（論理削除のみ）
 
 ### 本番環境での推奨強化策
 
-1. **Firebase Authentication**: sessionStorageの代わりに使用
-2. **Admin SDK**: 管理操作をサーバーサイド（API Route）で実行
-3. **カスタムクレーム**: 管理者権限の適切な管理
-4. **API Route経由の操作**: クライアント側からの直接操作を制限
-5. **reCAPTCHA**: Bot対策の強化
-6. **レート制限**: Upstash Redisなどによる強固なレート制限
+1. ✅ **API Route認証**: 実装済み - パスワード検証はサーバーサイドで実行
+2. ✅ **HTTPOnly Cookie**: 実装済み - セッション情報はXSSから保護
+3. ✅ **厳格なFirestoreルール**: 実装済み - 型チェック、文字列長制限、物理削除禁止
+4. **Firebase Authentication**: より強固な認証が必要な場合に推奨
+5. **Admin SDK**: 管理操作をサーバーサイド（API Route）で実行
+6. **カスタムクレーム**: 管理者権限の適切な管理
+7. **reCAPTCHA**: Bot対策の強化
+8. **レート制限**: Upstash Redisなどによる強固なレート制限
 
 ## カスタマイズ
 
 ### パスワード変更
-`.env.local` の `NEXT_PUBLIC_ADMIN_PASSWORD` を変更してください。
+`.env.local` の `ADMIN_PASSWORD` を変更してください。
 Vercelの環境変数も忘れずに更新してください。
+
+⚠️ **重要**: `NEXT_PUBLIC_`プレフィックスは付けないでください。
 
 ### クールダウン時間変更
 `app/page.tsx` の60000（ミリ秒）を変更：
@@ -386,9 +410,9 @@ const cooldownTime = 60000; // 1分 = 60000ms
 - Firebaseコンソールでインデックスが作成されているか確認
 
 ### Dashboardにログインできない
-- `.env.local` の `NEXT_PUBLIC_ADMIN_PASSWORD` を確認
+- `.env.local` の `ADMIN_PASSWORD` を確認（⚠️ `NEXT_PUBLIC_`プレフィックスなし）
 - Vercelの環境変数が設定されているか確認
-- ブラウザのsessionStorageをクリア
+- ブラウザのCookieをクリア
 
 ### 今日のアクティビティが表示されない
 - Firestoreルールで `analytics/daily/dates` へのアクセスが許可されているか確認
@@ -398,8 +422,9 @@ const cooldownTime = 60000; // 1分 = 60000ms
 
 ### 認証保護ページにアクセスできない
 - Dashboardで正しくログインしているか確認
-- sessionStorageに `admin_authenticated` が `true` で保存されているか確認
-- ブラウザのDevToolsでsessionStorageを確認
+- ブラウザのCookieがブロックされていないか確認
+- プライベートブラウジングモードの場合、通常モードで試してください
+- ブラウザのDevToolsでCookie（`admin_session`）が設定されているか確認
 
 ## ライセンス
 

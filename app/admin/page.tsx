@@ -50,33 +50,63 @@ export default function AdminPage() {
 
   // 認証状態をチェック
   useEffect(() => {
-    const auth = sessionStorage.getItem("admin_authenticated");
-    if (auth === "true") {
-      setIsAuthenticated(true);
-    }
+    const checkAuth = async () => {
+      try {
+        const res = await fetch("/api/auth/verify");
+        const data = await res.json();
+        if (data.authenticated) {
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error("認証確認エラー:", error);
+      }
+    };
+    checkAuth();
   }, []);
 
   // 🔑 ログイン処理
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const correctPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
+    setError("");
 
-    if (password === correctPassword) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem("admin_authenticated", "true");
-      setError("");
-      // GA: 管理画面ログイン
-      trackAdminLogin();
-    } else {
-      setError("パスワードが間違っています");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setIsAuthenticated(true);
+        setPassword("");
+        // GA: 管理画面ログイン
+        trackAdminLogin();
+      } else {
+        setError(data.error || "ログインに失敗しました");
+        setPassword("");
+      }
+    } catch (error) {
+      console.error("ログインエラー:", error);
+      setError("ログイン処理でエラーが発生しました");
       setPassword("");
     }
   };
 
   // 🚪 ログアウト処理
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    sessionStorage.removeItem("admin_authenticated");
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+      setIsAuthenticated(false);
+    } catch (error) {
+      console.error("ログアウトエラー:", error);
+      setIsAuthenticated(false);
+    }
   };
 
   // 📋 リクエスト中の曲を取得
