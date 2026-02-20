@@ -135,7 +135,7 @@ export default function Home() {
 
   // 📤 送信処理
   const handleSubmit = async () => {
-    if (!nickname || !selectedTrack) {
+    if (!nickname || !nickname.trim() || !selectedTrack) {
       addToast("ニックネームと曲選択は必須です", "error");
       return;
     }
@@ -155,7 +155,7 @@ export default function Home() {
       // 🔍 重複チェック: 同じニックネームで既にリクエスト済みか確認
       const requestsRef = collection(trackRef, "requests");
       const { query: firestoreQuery, where, getDocs: getDocsFirestore } = await import("firebase/firestore");
-      const duplicateQuery = firestoreQuery(requestsRef, where("nickname", "==", nickname));
+      const duplicateQuery = firestoreQuery(requestsRef, where("nickname", "==", nickname.trim()));
       const duplicateSnap = await getDocsFirestore(duplicateQuery);
 
       if (!duplicateSnap.empty) {
@@ -167,14 +167,21 @@ export default function Home() {
       const trackSnap = await getDoc(trackRef);
 
       if (!trackSnap.exists()) {
-        await setDoc(trackRef, {
+        const trackData: any = {
           title: selectedTrack.name,
           artist: selectedTrack.artists[0].name,
-          image: selectedTrack.album.images[0]?.url || "",
           totalRequests: 1,
           status: "pending",
           createdAt: serverTimestamp(),
-        });
+        };
+
+        // imageがある場合のみ追加
+        const imageUrl = selectedTrack.album.images[0]?.url;
+        if (imageUrl) {
+          trackData.image = imageUrl;
+        }
+
+        await setDoc(trackRef, trackData);
       } else {
         const currentData = trackSnap.data();
         const updates: any = {
@@ -189,11 +196,17 @@ export default function Home() {
         await updateDoc(trackRef, updates);
       }
 
-      await addDoc(collection(trackRef, "requests"), {
-        nickname,
-        message,
+      const requestData: any = {
+        nickname: nickname.trim(),
         requestedAt: serverTimestamp(),
-      });
+      };
+
+      // messageがある場合のみ追加
+      if (message && message.trim()) {
+        requestData.message = message.trim();
+      }
+
+      await addDoc(collection(trackRef, "requests"), requestData);
 
       // GA: リクエスト送信イベント
       trackRequestSubmit(selectedTrack.name, selectedTrack.artists[0].name);
