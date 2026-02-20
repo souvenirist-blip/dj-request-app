@@ -16,7 +16,6 @@ import {
 } from "firebase/firestore";
 import { SpotifyTrack, SpotifySearchResponse, Toast } from "../src/types";
 import ToastContainer from "../src/components/ToastContainer";
-// import ShareButtons from "../src/components/ShareButtons";
 import {
   trackSearch,
   trackTrackSelect,
@@ -36,8 +35,6 @@ export default function Home() {
   const [isManualMode, setIsManualMode] = useState(false);
   const [manualTrackName, setManualTrackName] = useState("");
   const [manualArtistName, setManualArtistName] = useState("");
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [sharedTrack, setSharedTrack] = useState<{ title: string; artist: string } | null>(null);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
 
   useEffect(() => {
@@ -219,13 +216,6 @@ export default function Home() {
       // クールダウン開始
       localStorage.setItem("last_request_time", Date.now().toString());
       setCooldownRemaining(60);
-
-      // シェアモーダルを表示
-      // setSharedTrack({
-      //   title: selectedTrack.name,
-      //   artist: selectedTrack.artists[0].name,
-      // });
-      // setShowShareModal(true);
 
       setNickname("");
       setSearchQuery("");
@@ -482,41 +472,6 @@ export default function Home() {
             {cooldownRemaining}秒後に再度リクエストできます
           </div>
         )}
-
-        {/* シェアモーダル */}
-        {/* {showShareModal && sharedTrack && (
-          <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50 animate-fade-in">
-            <div className="glass rounded-lg p-6 max-w-md w-full animate-slide-in">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-extralight text-white mb-4 tracking-widest">
-                  REQUEST SENT
-                </h2>
-                <div className="text-slate-400 text-sm mb-2 tracking-wide">
-                  {sharedTrack.title}
-                </div>
-                <div className="text-slate-600 text-xs mb-6 tracking-wide">
-                  {sharedTrack.artist}
-                </div>
-
-                <ShareButtons
-                  trackTitle={sharedTrack.title}
-                  artistName={sharedTrack.artist}
-                />
-              </div>
-
-              <button
-                onClick={() => {
-                  setShowShareModal(false);
-                  setSharedTrack(null);
-                }}
-                className="w-full glass px-4 py-2.5 rounded-lg text-slate-500 font-light tracking-wider text-sm
-                         hover:glass-hover hover:text-white active:scale-95 transition-all duration-200"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        )} */}
       </div>
     </>
   );

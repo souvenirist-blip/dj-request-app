@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { db } from "../../src/lib/firebase";
-// import ShareButtons from "../../src/components/ShareButtons";
 import {
   collection,
   query,
@@ -403,11 +402,6 @@ export default function StatsPage() {
           </div>
         )}
       </div>
-
-      {/* シェアセクション */}
-      {/* <div className="glass rounded-lg p-5 mb-8 animate-fade-in" style={{ animationDelay: "350ms" }}>
-        <ShareButtons />
-      </div> */}
 
       {/* ナビゲーション */}
       <div className="flex gap-3 justify-center pb-8 flex-wrap">

@@ -56,7 +56,7 @@ DJイベントで使用する楽曲リクエストアプリケーション。参
 
 ### Firebase Analytics（日次集計）
 - **今日のアクティビティ**: ページビュー数・リクエスト送信数を日次集計
-- **ユーザー向けページのみ計測**: 管理画面（/admin, /stats, /analytics, /all-requests）のアクセスは含まれない
+- **ユーザー向けページのみ計測**: 管理画面（/admin, /stats, /all-requests）のアクセスは含まれない
 - **自動リセット**: 毎日JST 6:00にカウンターがリセット（新しい日付のドキュメントを作成）
 - **低コスト設計**: イベントごとの保存ではなく、カウンター方式で集計
 - **Google Analytics統合**: GA4による詳細な分析も利用可能
@@ -204,8 +204,6 @@ dj-request/
 │   │   └── page.tsx          # 全リクエスト一覧（認証必須）
 │   ├── stats/
 │   │   └── page.tsx          # 統計ダッシュボード（認証必須）
-│   ├── analytics/
-│   │   └── page.tsx          # /statsへリダイレクト
 │   ├── api/
 │   │   ├── auth/
 │   │   │   ├── login/
@@ -278,7 +276,7 @@ dj-request/
 }
 ```
 
-注: 管理画面（/admin, /stats, /analytics, /all-requests）のページビューは記録されません。
+注: 管理画面（/admin, /stats, /all-requests）のページビューは記録されません。
 
 ## 主要な機能と仕様
 
